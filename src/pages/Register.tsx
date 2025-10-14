@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import { LanguageSelector } from '../components/LanguageSelector';
 import './Register.css';
 
 export const Register: React.FC = () => {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
+  const [lname, setLname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -18,22 +22,22 @@ export const Register: React.FC = () => {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('auth.register.passwordMismatch'));
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError(t('auth.register.passwordLength'));
       return;
     }
 
     setLoading(true);
 
     try {
-      await register({ name, email, password });
+      await register({ name, lname, email, password, type: 'patient' });
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(err.response?.data?.message || t('auth.register.error'));
     } finally {
       setLoading(false);
     }
@@ -41,6 +45,7 @@ export const Register: React.FC = () => {
 
   return (
     <div className="register-container">
+      <LanguageSelector />
       <div className="register-card">
         <div className="register-header">
           <div className="logo">
@@ -48,8 +53,8 @@ export const Register: React.FC = () => {
               <path d="M24 4C12.96 4 4 12.96 4 24C4 35.04 12.96 44 24 44C35.04 44 44 35.04 44 24C44 12.96 35.04 4 24 4ZM32 26H26V32C26 33.1 25.1 34 24 34C22.9 34 22 33.1 22 32V26H16C14.9 26 14 25.1 14 24C14 22.9 14.9 22 16 22H22V16C22 14.9 22.9 14 24 14C25.1 14 26 14.9 26 16V22H32C33.1 22 34 22.9 34 24C34 25.1 33.1 26 32 26Z" fill="#0066CC"/>
             </svg>
           </div>
-          <h1>Create Account</h1>
-          <p>Sign up to get started with your medical records</p>
+          <h1>{t('auth.register.title')}</h1>
+          <p>{t('auth.register.subtitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="register-form">
@@ -63,65 +68,78 @@ export const Register: React.FC = () => {
           )}
 
           <div className="form-group">
-            <label htmlFor="name">Full Name</label>
+            <label htmlFor="name">{t('auth.register.name')}</label>
             <input
               id="name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="John Doe"
+              placeholder={t('auth.register.namePlaceholder')}
               required
-              autoComplete="name"
+              autoComplete="given-name"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email Address</label>
+            <label htmlFor="lname">{t('auth.register.lname')}</label>
+            <input
+              id="lname"
+              type="text"
+              value={lname}
+              onChange={(e) => setLname(e.target.value)}
+              placeholder={t('auth.register.lnamePlaceholder')}
+              required
+              autoComplete="family-name"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="email">{t('auth.register.email')}</label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={t('auth.register.emailPlaceholder')}
               required
               autoComplete="email"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{t('auth.register.password')}</label>
             <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder={t('auth.register.passwordPlaceholder')}
               required
               autoComplete="new-password"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label htmlFor="confirmPassword">{t('auth.register.confirmPassword')}</label>
             <input
               id="confirmPassword"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder={t('auth.register.passwordPlaceholder')}
               required
               autoComplete="new-password"
             />
           </div>
 
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? t('auth.register.creatingAccount') : t('auth.register.createAccount')}
           </button>
         </form>
 
         <div className="register-footer">
           <p>
-            Already have an account? <Link to="/login">Sign in</Link>
+            {t('auth.register.hasAccount')} <Link to="/login">{t('auth.register.signIn')}</Link>
           </p>
         </div>
       </div>

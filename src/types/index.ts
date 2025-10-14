@@ -1,9 +1,10 @@
 export interface User {
-  id: number;
+  idUser: number;
   name: string;
+  lname: string;
   email: string;
-  createdAt: string;
-  updatedAt: string;
+  type: string;
+  sub: string;
 }
 
 export interface AuthResponse {
@@ -18,8 +19,10 @@ export interface LoginCredentials {
 
 export interface RegisterCredentials {
   name: string;
+  lname: string;
   email: string;
   password: string;
+  type: string;
 }
 
 export interface Patient {

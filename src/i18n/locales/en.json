@@ -1,0 +1,94 @@
+{
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to access your medical records",
+      "email": "Email Address",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "••••••••",
+      "signIn": "Sign In",
+      "signingIn": "Signing in...",
+      "noAccount": "Don't have an account?",
+      "createOne": "Create one",
+      "error": "Login failed. Please check your credentials."
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Sign up to get started with your medical records",
+      "name": "First Name",
+      "namePlaceholder": "John",
+      "lname": "Last Name",
+      "lnamePlaceholder": "Doe",
+      "email": "Email Address",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "••••••••",
+      "confirmPassword": "Confirm Password",
+      "createAccount": "Create Account",
+      "creatingAccount": "Creating account...",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "passwordMismatch": "Passwords do not match",
+      "passwordLength": "Password must be at least 6 characters",
+      "error": "Registration failed. Please try again."
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome, {{name}}!",
+    "logout": "Logout",
+    "loading": "Loading your medical records...",
+    "nav": {
+      "overview": "Overview",
+      "history": "Medical History",
+      "allergies": "Allergies",
+      "medications": "Medications"
+    },
+    "overview": {
+      "medicalRecords": "Medical Records",
+      "totalAppointments": "Total appointments",
+      "allergies": "Allergies",
+      "registeredAllergies": "Registered allergies",
+      "activeMedications": "Active Medications",
+      "currentPrescriptions": "Current prescriptions",
+      "latestVitals": "Latest Vitals",
+      "recentMeasurements": "Recent measurements",
+      "available": "Available",
+      "na": "N/A",
+      "securityBanner": {
+        "title": "Your medical information is secure",
+        "description": "All your health data is encrypted and stored securely according to HIPAA standards."
+      }
+    },
+    "history": {
+      "title": "Medical History",
+      "appointment": "Appointment #{{id}}",
+      "date": "Date:",
+      "start": "Start:",
+      "end": "End:",
+      "statusOpen": "Open",
+      "statusClosed": "Closed",
+      "empty": {
+        "title": "No medical history yet",
+        "description": "Your medical appointments will appear here once your doctor creates them."
+      }
+    },
+    "allergies": {
+      "title": "Allergies",
+      "empty": {
+        "title": "No allergies recorded",
+        "description": "Contact your healthcare provider if you need to add allergy information."
+      }
+    },
+    "medications": {
+      "title": "Current Medications",
+      "empty": {
+        "title": "No medications listed",
+        "description": "Your current medications will be displayed here when prescribed by your doctor."
+      }
+    }
+  },
+  "common": {
+    "appName": "MedicalApp"
+  }
+}

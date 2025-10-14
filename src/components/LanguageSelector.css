@@ -1,0 +1,53 @@
+.language-selector {
+  display: flex;
+  gap: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+}
+
+.lang-btn {
+  padding: 0.375rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.375rem;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lang-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.lang-btn.active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* For login/register pages */
+.login-container .language-selector,
+.register-container .language-selector {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+}
+
+.login-container .lang-btn,
+.register-container .lang-btn {
+  color: white;
+}
+
+@media (max-width: 480px) {
+  .login-container .language-selector,
+  .register-container .language-selector {
+    top: 1rem;
+    right: 1rem;
+  }
+
+  .lang-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+  }
+}
