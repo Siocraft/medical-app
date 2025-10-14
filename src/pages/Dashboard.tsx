@@ -8,7 +8,7 @@ import type { PatientData } from '../types';
 import './Dashboard.css';
 
 export const Dashboard: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [patientData, setPatientData] = useState<PatientData | null>(null);
@@ -22,12 +22,12 @@ export const Dashboard: React.FC = () => {
   const loadPatientData = async () => {
     try {
       setLoading(true);
-      // For now, we'll use mock data since the API might need specific endpoints
-      // In production, replace this with actual API call
+      console.log('[TEMPORARY] Fetching patient data...');
       const data = await patientService.getMyPatientData();
+      console.log('[TEMPORARY] Received patient data:', data);
       setPatientData(data);
     } catch (err: any) {
-      // If endpoint doesn't exist yet, use fallback
+      console.error('[TEMPORARY] Error fetching patient data:', err);
       setPatientData(null);
     } finally {
       setLoading(false);
@@ -197,27 +197,73 @@ export const Dashboard: React.FC = () => {
               <h2>{t('dashboard.history.title')}</h2>
               {patientData?.clinicalHistories && patientData.clinicalHistories.length > 0 ? (
                 <div className="records-list">
-                  {patientData.clinicalHistories.map((record) => (
+                  {patientData.clinicalHistories.map((record: any) => (
                     <div key={record.idHistory} className="record-card">
                       <div className="record-header">
-                        <h3>{t('dashboard.history.appointment', { id: record.idHistory })}</h3>
+                        <div className="record-title-section">
+                          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" className="record-icon">
+                            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
+                          </svg>
+                          <div>
+                            <h3>{new Date(record.date).toLocaleDateString(i18n.language, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
+                            <p className="record-time">{new Date(record.start).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}</p>
+                          </div>
+                        </div>
                         <span className={`record-status ${record.closed ? 'closed' : 'open'}`}>
                           {record.closed ? t('dashboard.history.statusClosed') : t('dashboard.history.statusOpen')}
                         </span>
                       </div>
+
                       <div className="record-details">
-                        <div className="record-detail">
-                          <span className="label">{t('dashboard.history.date')}</span>
-                          <span className="value">{new Date(record.date).toLocaleDateString()}</span>
-                        </div>
-                        <div className="record-detail">
-                          <span className="label">{t('dashboard.history.start')}</span>
-                          <span className="value">{new Date(record.start).toLocaleTimeString()}</span>
-                        </div>
-                        {record.end && (
-                          <div className="record-detail">
-                            <span className="label">{t('dashboard.history.end')}</span>
-                            <span className="value">{new Date(record.end).toLocaleTimeString()}</span>
+                        {record.diagnosis && record.diagnosis.length > 0 && (
+                          <div className="record-section">
+                            <h4>
+                              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
+                              </svg>
+                              Diagnósticos
+                            </h4>
+                            <span className="badge">{record.diagnosis.length} diagnóstico(s)</span>
+                          </div>
+                        )}
+
+                        {record.medications && record.medications.length > 0 && (
+                          <div className="record-section">
+                            <h4>
+                              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1z" clipRule="evenodd"/>
+                              </svg>
+                              Medicamentos
+                            </h4>
+                            <div className="medications-list">
+                              {record.medications.slice(0, 3).map((med: any, idx: number) => (
+                                <span key={idx} className="medication-tag">{med.productName || med.productVmpName}</span>
+                              ))}
+                              {record.medications.length > 3 && (
+                                <span className="badge">+{record.medications.length - 3} más</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {record.notes && record.notes.length > 0 && record.notes[0].content && (
+                          <div className="record-section">
+                            <h4>
+                              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                                <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/>
+                              </svg>
+                              Notas clínicas
+                            </h4>
+                            <p className="clinical-note">{record.notes[0].content.substring(0, 150)}{record.notes[0].content.length > 150 ? '...' : ''}</p>
+                          </div>
+                        )}
+
+                        {(!record.diagnosis || record.diagnosis.length === 0) &&
+                         (!record.medications || record.medications.length === 0) &&
+                         (!record.notes || record.notes.length === 0 || !record.notes[0].content) && (
+                          <div className="record-section">
+                            <p className="no-details">Sin detalles adicionales registrados</p>
                           </div>
                         )}
                       </div>
