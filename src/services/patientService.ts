@@ -1,5 +1,5 @@
 import api from './api';
-import { Patient, PatientData } from '../types';
+import type { Patient, PatientData } from '../types';
 
 export const patientService = {
   async getPatient(id: number): Promise<Patient> {
