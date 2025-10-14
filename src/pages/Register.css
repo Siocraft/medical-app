@@ -1,0 +1,74 @@
+.register-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 1.5rem;
+}
+
+.register-card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 420px;
+}
+
+.register-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.register-header .logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.register-header h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 0.5rem;
+}
+
+.register-header p {
+  color: #718096;
+  font-size: 0.875rem;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.register-footer {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+.register-footer a {
+  color: #667eea;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.register-footer a:hover {
+  color: #764ba2;
+}
+
+@media (max-width: 480px) {
+  .register-card {
+    padding: 1.5rem;
+  }
+
+  .register-header h1 {
+    font-size: 1.5rem;
+  }
+}
