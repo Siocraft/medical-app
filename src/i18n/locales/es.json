@@ -89,6 +89,54 @@
     }
   },
   "common": {
-    "appName": "MedicalApp"
+    "appName": "MedicalApp",
+    "medic": "Médico",
+    "patient": "Paciente"
+  },
+  "medic": {
+    "patients": {
+      "title": "Mis Pacientes",
+      "subtitle": "Gestiona y visualiza tu {{count}} paciente",
+      "subtitle_other": "Gestiona y visualiza tus {{count}} pacientes",
+      "searchPlaceholder": "Buscar por nombre, correo o teléfono...",
+      "noPatients": "No se encontraron pacientes",
+      "adjustSearch": "Intenta ajustar tus términos de búsqueda",
+      "emptyState": "Tus pacientes aparecerán aquí",
+      "lastVisit": "Última visita:",
+      "appointments": "citas",
+      "loadFailed": "Error al cargar pacientes",
+      "statusRecent": "Reciente"
+    },
+    "patientDetail": {
+      "back": "Atrás",
+      "goBack": "Volver",
+      "errorLoading": "Error al Cargar Paciente",
+      "notFound": "Paciente no encontrado",
+      "bloodType": "Tipo de Sangre:",
+      "email": "Correo Electrónico",
+      "phone": "Teléfono",
+      "address": "Dirección",
+      "patientId": "ID del Paciente",
+      "appointmentHistory": "Historial Clínico",
+      "noAppointments": "No se encontró historial clínico para este paciente",
+      "reason": "Motivo",
+      "motive": "Motivo",
+      "diagnosis": "IDs de Diagnóstico",
+      "diagnosisIds": "IDs de Diagnóstico",
+      "treatment": "Medicamentos",
+      "medications": "Medicamentos",
+      "notes": "Notas",
+      "edit": "Editar Info",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "addAppointment": "Nueva Visita",
+      "deleteAppointment": "Eliminar",
+      "appointmentDate": "Fecha",
+      "saveSuccess": "Guardado exitosamente",
+      "saveError": "Error al guardar",
+      "deleteSuccess": "Eliminado exitosamente",
+      "deleteError": "Error al eliminar",
+      "appointmentDetails": "Detalles de la Visita"
+    }
   }
 }

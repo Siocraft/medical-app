@@ -64,7 +64,12 @@ export const Dashboard: React.FC = () => {
                 {user?.name?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div className="user-details">
-                <span className="user-name">{user?.name}</span>
+                <div className="user-name-row">
+                  <span className="user-name">{user?.name}</span>
+                  <span className={`user-type-badge ${user?.type === 'medic' ? 'medic' : 'patient'}`}>
+                    {user?.type === 'medic' ? t('common.medic') : t('common.patient')}
+                  </span>
+                </div>
                 <span className="user-email">{user?.email}</span>
               </div>
             </div>

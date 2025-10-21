@@ -89,6 +89,54 @@
     }
   },
   "common": {
-    "appName": "MedicalApp"
+    "appName": "MedicalApp",
+    "medic": "Doctor",
+    "patient": "Patient"
+  },
+  "medic": {
+    "patients": {
+      "title": "My Patients",
+      "subtitle": "Manage and view your {{count}} patient",
+      "subtitle_other": "Manage and view your {{count}} patients",
+      "searchPlaceholder": "Search by name, email, or phone...",
+      "noPatients": "No patients found",
+      "adjustSearch": "Try adjusting your search terms",
+      "emptyState": "Your patients will appear here",
+      "lastVisit": "Last visit:",
+      "appointments": "appointments",
+      "loadFailed": "Failed to load patients",
+      "statusRecent": "Recent"
+    },
+    "patientDetail": {
+      "back": "Back",
+      "goBack": "Go Back",
+      "errorLoading": "Error Loading Patient",
+      "notFound": "Patient not found",
+      "bloodType": "Blood Type:",
+      "email": "Email",
+      "phone": "Phone",
+      "address": "Address",
+      "patientId": "Patient ID",
+      "appointmentHistory": "Clinical History",
+      "noAppointments": "No clinical history found for this patient",
+      "reason": "Motive",
+      "motive": "Motive",
+      "diagnosis": "Diagnosis IDs",
+      "diagnosisIds": "Diagnosis IDs",
+      "treatment": "Medications",
+      "medications": "Medications",
+      "notes": "Notes",
+      "edit": "Edit Info",
+      "save": "Save",
+      "cancel": "Cancel",
+      "addAppointment": "New Visit",
+      "deleteAppointment": "Delete",
+      "appointmentDate": "Date",
+      "saveSuccess": "Saved successfully",
+      "saveError": "Error saving changes",
+      "deleteSuccess": "Deleted successfully",
+      "deleteError": "Error deleting",
+      "appointmentDetails": "Visit Details"
+    }
   }
 }
