@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { PatientCardSkeleton } from '../components/PatientCardSkeleton';
+import api from '../services/api';
 import {
   Search,
   Mail,
@@ -34,19 +35,8 @@ interface Patient {
 }
 
 const fetchPatients = async () => {
-  const token = localStorage.getItem('access_token');
-  const response = await fetch('http://localhost:3000/medics/my-patients', {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch patients');
-  }
-
-  const data = await response.json();
-  return data.patients || [];
+  const response = await api.get('/medics/my-patients');
+  return response.data.patients || [];
 };
 
 export const MedicDashboard = () => {

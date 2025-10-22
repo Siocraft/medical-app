@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 import {
   Mail,
   Phone,
@@ -45,18 +46,8 @@ interface Appointment {
 
 // API functions
 const fetchPatientDetails = async (patientId: string) => {
-  const token = localStorage.getItem('access_token');
-  const response = await fetch(`http://localhost:3000/medics/patients/${patientId}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch patient details');
-  }
-
-  const data = await response.json();
+  const response = await api.get(`/medics/patients/${patientId}`);
+  const data = response.data;
   // Return both patient and history (appointments)
   return {
     patient: data.patient,
@@ -120,21 +111,8 @@ export const PatientDetail = () => {
   // Mutation for updating patient
   const updatePatientMutation = useMutation({
     mutationFn: async (updates: Partial<Patient>) => {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://localhost:3000/patients/${patient?.idPatient}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update patient');
-      }
-
-      return response.json();
+      const response = await api.patch(`/patients/${patient?.idPatient}`, updates);
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient', id] });
@@ -155,21 +133,8 @@ export const PatientDetail = () => {
   // Mutation for creating appointment
   const createAppointmentMutation = useMutation({
     mutationFn: async (appointmentData: any) => {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('http://localhost:3000/clinical-history', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(appointmentData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create appointment');
-      }
-
-      return response.json();
+      const response = await api.post('/clinical-history', appointmentData);
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient', id] });
@@ -221,21 +186,8 @@ export const PatientDetail = () => {
   // Mutation for updating appointment
   const updateAppointmentMutation = useMutation({
     mutationFn: async ({ appointmentId, updates }: { appointmentId: number; updates: any }) => {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://localhost:3000/clinical-history/${appointmentId}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update appointment');
-      }
-
-      return response.json();
+      const response = await api.patch(`/clinical-history/${appointmentId}`, updates);
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient', id] });
@@ -269,19 +221,8 @@ export const PatientDetail = () => {
   // Mutation for deleting appointment
   const deleteAppointmentMutation = useMutation({
     mutationFn: async (appointmentId: number) => {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://localhost:3000/clinical-history/${appointmentId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete appointment');
-      }
-
-      return response.json();
+      const response = await api.delete(`/clinical-history/${appointmentId}`);
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient', id] });
