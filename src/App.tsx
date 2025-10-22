@@ -4,7 +4,6 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
-import { Dashboard } from './pages/Dashboard';
 import { MedicDashboard } from './pages/MedicDashboard';
 import { PatientDetail } from './pages/PatientDetail';
 import { DashboardRouter } from './components/DashboardRouter';

@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  ArrowLeft,
   Mail,
   Phone,
   MapPin,
@@ -580,7 +579,7 @@ export const PatientDetail = () => {
             </div>
           ) : (
             <div className="appointments-list">
-              {appointments.map((appointment) => (
+              {appointments.map((appointment: Appointment) => (
                 <div key={appointment.idAppointment} className="appointment-card">
                   {editingAppointmentId === appointment.idAppointment ? (
                     <div className="appointment-edit-form">

@@ -69,7 +69,7 @@ export const MedicDashboard = () => {
     navigate(`/medic/patient/${patientId}`);
   };
 
-  const filteredPatients = patients.filter((patient) => {
+  const filteredPatients = patients.filter((patient: Patient) => {
     const searchLower = searchTerm.toLowerCase();
     return (
       patient.name?.toLowerCase().includes(searchLower) ||
@@ -191,7 +191,7 @@ export const MedicDashboard = () => {
                 </p>
               </div>
             ) : (
-              filteredPatients.map((patient) => (
+              filteredPatients.map((patient: Patient) => (
                 <div
                   key={patient.idPatient}
                   className="patient-card"
