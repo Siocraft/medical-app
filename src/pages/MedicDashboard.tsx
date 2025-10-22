@@ -7,9 +7,6 @@ import { PatientCardSkeleton } from '../components/PatientCardSkeleton';
 import api from '../services/api';
 import {
   Search,
-  Mail,
-  Phone,
-  MapPin,
   Calendar,
   Activity,
   ChevronRight,
@@ -196,49 +193,28 @@ export const MedicDashboard = () => {
                       {getInitials(patient.name, patient.lname)}
                     </div>
                     <div className="patient-info">
-                      <div className="patient-name-row">
-                        <h3 className="patient-name">
-                          {patient.name} {patient.lname}
-                        </h3>
+                      <h3 className="patient-name">
+                        {patient.name} {patient.lname}
+                      </h3>
+                      <div className="patient-meta">
+                        {patient.bloodGroup && patient.bloodRh && (
+                          <span className="blood-type">
+                            {patient.bloodGroup}
+                            {patient.bloodRh}
+                          </span>
+                        )}
                         {isRecentVisit(patient.lastAppointment) && (
                           <span className="status-badge recent">{t('medic.patients.statusRecent')}</span>
                         )}
                       </div>
-                      {patient.bloodGroup && patient.bloodRh && (
-                        <span className="blood-type">
-                          {patient.bloodGroup}
-                          {patient.bloodRh}
-                        </span>
-                      )}
                     </div>
                     <ChevronRight className="chevron-icon" size={20} />
-                  </div>
-
-                  <div className="patient-card-details">
-                    {patient.email && (
-                      <div className="detail-item">
-                        <Mail size={16} className="detail-icon" />
-                        <span className="detail-text">{patient.email}</span>
-                      </div>
-                    )}
-                    {patient.phone && (
-                      <div className="detail-item">
-                        <Phone size={16} className="detail-icon" />
-                        <span className="detail-text">{patient.phone}</span>
-                      </div>
-                    )}
-                    {patient.address && (
-                      <div className="detail-item">
-                        <MapPin size={16} className="detail-icon" />
-                        <span className="detail-text">{patient.address}</span>
-                      </div>
-                    )}
                   </div>
 
                   <div className="patient-card-footer">
                     <div className="stat">
                       <Calendar size={16} className="stat-icon" />
-                      <span className="stat-text">{t('medic.patients.lastVisit')} {formatDate(patient.lastAppointment)}</span>
+                      <span className="stat-text">{formatDate(patient.lastAppointment)}</span>
                     </div>
                     <div className="stat">
                       <Activity size={16} className="stat-icon" />

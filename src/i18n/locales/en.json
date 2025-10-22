@@ -89,7 +89,7 @@
     }
   },
   "common": {
-    "appName": "MedicalApp",
+    "appName": "Mi Medicina",
     "medic": "Doctor",
     "patient": "Patient"
   },
