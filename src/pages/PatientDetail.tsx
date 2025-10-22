@@ -31,6 +31,7 @@ interface Patient {
 
 interface Appointment {
   idHistory: number;
+  idAppointment: number;
   date: string;
   start: string;
   end: string | null;
