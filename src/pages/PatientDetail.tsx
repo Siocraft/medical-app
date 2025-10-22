@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -85,6 +85,14 @@ export const PatientDetail = () => {
 
   const patient = data?.patient;
   const appointments = data?.history || [];
+
+  useEffect(() => {
+    if (patient) {
+      document.title = `Mi Medicina | ${patient.name} ${patient.lname}`;
+    } else {
+      document.title = 'Mi Medicina | Paciente';
+    }
+  }, [patient]);
 
   const handleBack = () => {
     navigate(-1);

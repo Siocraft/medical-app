@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,6 +16,10 @@ export const Register: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = 'Mi Medicina | Registrarse';
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

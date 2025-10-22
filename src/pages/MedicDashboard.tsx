@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -44,6 +44,10 @@ export const MedicDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    document.title = 'Mi Medicina | Inicio';
+  }, []);
 
   const { data: patients = [], isLoading, isError } = useQuery({
     queryKey: ['medic-patients'],
