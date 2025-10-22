@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../contexts/AuthContext';
+import { Header } from '../components/Header';
 import api from '../services/api';
 import {
   Mail,
@@ -59,7 +59,6 @@ export const PatientDetail = () => {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const [isEditingPatient, setIsEditingPatient] = useState(false);
@@ -305,20 +304,7 @@ export const PatientDetail = () => {
 
   return (
     <div className="patient-detail">
-      {/* Header */}
-      <header className="detail-header">
-        <button className="btn-back" onClick={handleBack}>
-          <span>←</span>
-          <span>{t('medic.patientDetail.back')}</span>
-        </button>
-
-        <div className="header-user-info">
-          <div className="user-avatar">
-            {getInitials(user?.name, user?.lname)}
-          </div>
-          <span className="user-name">{user?.name}</span>
-        </div>
-      </header>
+      <Header showBackButton onBack={handleBack} />
 
       {/* Main Content */}
       <div className="detail-main">

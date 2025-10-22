@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { patientService } from '../services/patientService';
-import { LanguageSelector } from '../components/LanguageSelector';
+import { Header } from '../components/Header';
 import type { PatientData } from '../types';
 import './Dashboard.css';
 
 export const Dashboard: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [patientData, setPatientData] = useState<PatientData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<'overview' | 'history' | 'allergies' | 'medications'>('overview');
@@ -34,11 +32,6 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   if (loading) {
     return (
       <div className="loading-container">
@@ -50,39 +43,7 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="dashboard">
-      <header className="dashboard-header">
-        <div className="header-content">
-          <div className="logo">
-            <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M24 4C12.96 4 4 12.96 4 24C4 35.04 12.96 44 24 44C35.04 44 44 35.04 44 24C44 12.96 35.04 4 24 4ZM32 26H26V32C26 33.1 25.1 34 24 34C22.9 34 22 33.1 22 32V26H16C14.9 26 14 25.1 14 24C14 22.9 14.9 22 16 22H22V16C22 14.9 22.9 14 24 14C25.1 14 26 14.9 26 16V22H32C33.1 22 34 22.9 34 24C34 25.1 33.1 26 32 26Z" fill="white"/>
-            </svg>
-            <span>{t('common.appName')}</span>
-          </div>
-          <div className="user-menu">
-            <div className="user-info">
-              <div className="user-avatar">
-                {user?.name?.charAt(0).toUpperCase() || 'U'}
-              </div>
-              <div className="user-details">
-                <div className="user-name-row">
-                  <span className="user-name">{user?.name}</span>
-                  <span className={`user-type-badge ${user?.type === 'medic' ? 'medic' : 'patient'}`}>
-                    {user?.type === 'medic' ? t('common.medic') : t('common.patient')}
-                  </span>
-                </div>
-                <span className="user-email">{user?.email}</span>
-              </div>
-            </div>
-            <LanguageSelector />
-            <button onClick={handleLogout} className="btn-logout">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm11 4.414l-4.293 4.293a1 1 0 01-1.414 0L6 9.414a1 1 0 111.414-1.414L9 9.586l3.293-3.293a1 1 0 011.414 1.414z" clipRule="evenodd"/>
-              </svg>
-              {t('dashboard.logout')}
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <div className="dashboard-layout">
         <aside className="dashboard-sidebar">

@@ -2,16 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '../contexts/AuthContext';
 import { PatientCardSkeleton } from '../components/PatientCardSkeleton';
+import { Header } from '../components/Header';
 import api from '../services/api';
 import {
   Search,
   Calendar,
   Activity,
   ChevronRight,
-  LogOut,
-  Stethoscope,
   AlertCircle,
   UserCircle
 } from 'lucide-react';
@@ -38,7 +36,6 @@ const fetchPatients = async () => {
 
 export const MedicDashboard = () => {
   const { t, i18n } = useTranslation();
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -50,11 +47,6 @@ export const MedicDashboard = () => {
     queryKey: ['medic-patients'],
     queryFn: fetchPatients,
   });
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   const handleViewPatient = (patientId: number) => {
     navigate(`/medic/patient/${patientId}`);
@@ -96,37 +88,7 @@ export const MedicDashboard = () => {
 
   return (
     <div className="medic-dashboard">
-      {/* Header */}
-      <header className="dashboard-header">
-        <div className="header-content">
-          <div className="logo">
-            <Stethoscope className="logo-icon" size={24} />
-            <span>{t('common.appName')}</span>
-          </div>
-
-          <div className="user-menu">
-            <div className="user-info">
-              <div className="user-avatar">
-                {getInitials(user?.name, user?.lname)}
-              </div>
-              <div className="user-details">
-                <div className="user-name-row">
-                  <span className="user-name">{user?.name}</span>
-                  <span className="user-type-badge medic">
-                    {t('common.medic')}
-                  </span>
-                </div>
-                <span className="user-email">{user?.email}</span>
-              </div>
-            </div>
-
-            <button className="btn-logout" onClick={handleLogout}>
-              <LogOut size={18} />
-              <span>{t('dashboard.logout')}</span>
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <div className="medic-main">
