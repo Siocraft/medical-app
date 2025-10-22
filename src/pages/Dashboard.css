@@ -3,114 +3,7 @@
   background-color: #f7fafc;
 }
 
-.dashboard-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 1rem 2rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.header-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.dashboard-header .logo {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 1.25rem;
-  font-weight: 700;
-}
-
-.user-menu {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 1.125rem;
-}
-
-.user-details {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.user-name {
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-
-.user-name-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.user-email {
-  font-size: 0.75rem;
-  opacity: 0.9;
-}
-
-.user-type-badge {
-  display: inline-block;
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.625rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.user-type-badge.medic {
-  background-color: rgba(56, 161, 105, 0.2);
-  color: #22543d;
-  border: 1px solid rgba(56, 161, 105, 0.3);
-}
-
-.user-type-badge.patient {
-  background-color: rgba(49, 130, 206, 0.2);
-  color: #2c5282;
-  border: 1px solid rgba(49, 130, 206, 0.3);
-}
-
-.btn-logout {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-logout:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
+/* Old header styles removed - now using unified Header component */
 
 .dashboard-layout {
   display: flex;
@@ -427,19 +320,6 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .dashboard-header {
-    padding: 1rem;
-  }
-
-  .header-content {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .user-details {
-    display: none;
-  }
-
   .dashboard-layout {
     flex-direction: column;
   }
