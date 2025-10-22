@@ -170,6 +170,12 @@ export const MedicDashboard = () => {
                 <PatientCardSkeleton />
                 <PatientCardSkeleton />
                 <PatientCardSkeleton />
+                <PatientCardSkeleton />
+                <PatientCardSkeleton />
+                <PatientCardSkeleton />
+                <PatientCardSkeleton />
+                <PatientCardSkeleton />
+                <PatientCardSkeleton />
               </>
             ) : filteredPatients.length === 0 ? (
               <div className="empty-state">
