@@ -7,24 +7,11 @@ export const PatientCardSkeleton = () => {
         <div className="skeleton skeleton-avatar"></div>
         <div className="patient-info">
           <div className="skeleton skeleton-name"></div>
-          <div className="skeleton skeleton-blood"></div>
+          <div className="patient-meta">
+            <div className="skeleton skeleton-badge"></div>
+          </div>
         </div>
         <div className="skeleton skeleton-chevron"></div>
-      </div>
-
-      <div className="patient-card-details">
-        <div className="detail-item">
-          <div className="skeleton skeleton-icon"></div>
-          <div className="skeleton skeleton-text"></div>
-        </div>
-        <div className="detail-item">
-          <div className="skeleton skeleton-icon"></div>
-          <div className="skeleton skeleton-text"></div>
-        </div>
-        <div className="detail-item">
-          <div className="skeleton skeleton-icon"></div>
-          <div className="skeleton skeleton-text-long"></div>
-        </div>
       </div>
 
       <div className="patient-card-footer">
