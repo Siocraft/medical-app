@@ -60,7 +60,7 @@ export const MedicDashboard = () => {
   const [linking, setLinking] = useState<number | null>(null);
   const [contextMenu, setContextMenu] = useState<{ patientId: number; x: number; y: number } | null>(null);
   const [unlinking, setUnlinking] = useState<number | null>(null);
-  const longPressTimer = React.useRef<NodeJS.Timeout | null>(null);
+  const longPressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const justOpenedMenu = React.useRef<boolean>(false);
 
   useEffect(() => {

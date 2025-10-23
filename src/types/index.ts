@@ -214,6 +214,16 @@ export interface PatientFile {
   description?: string;
 }
 
+export interface Doctor {
+  idUser: number;
+  idMedic: number;
+  name: string;
+  lname: string;
+  email: string;
+  about?: string;
+  whatsapp?: string;
+}
+
 export interface PatientData {
   patient: Patient;
   clinicalHistories?: ClinicalHistory[];
@@ -231,4 +241,5 @@ export interface PatientData {
   profession?: Profession;
   religion?: Religion;
   files?: PatientFile[];
+  doctors?: Doctor[];
 }

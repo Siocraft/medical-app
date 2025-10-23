@@ -2,17 +2,8 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { User, Mail, Phone, Search, UserPlus, Plus, X, Trash2 } from 'lucide-react';
 import api from '../services/api';
+import type { Doctor } from '../types';
 import './DoctorSection.css';
-
-interface Doctor {
-  idUser: number;
-  idMedic: number;
-  name: string;
-  lname: string;
-  email: string;
-  about?: string;
-  whatsapp?: string;
-}
 
 interface DoctorSectionProps {
   doctors: Doctor[];
@@ -28,7 +19,7 @@ export const DoctorSection: React.FC<DoctorSectionProps> = ({ doctors, onDoctorL
   const [unlinking, setUnlinking] = useState<number | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ doctorId: number; x: number; y: number } | null>(null);
-  const longPressTimer = React.useRef<NodeJS.Timeout | null>(null);
+  const longPressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const justOpenedMenu = React.useRef<boolean>(false);
 
   const searchDoctors = async () => {

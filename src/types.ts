@@ -44,6 +44,16 @@ export interface Patient {
   religion?: number;
 }
 
+export interface Doctor {
+  idUser: number;
+  idMedic: number;
+  name: string;
+  lname: string;
+  email: string;
+  about?: string;
+  whatsapp?: string;
+}
+
 export interface PatientData {
   patient: any;
   history?: any[];
@@ -62,6 +72,7 @@ export interface PatientData {
   documentType?: { name: string };
   clinicalHistories?: any[];
   files?: PatientFile[];
+  doctors?: Doctor[];
 }
 
 export interface Allergy {
