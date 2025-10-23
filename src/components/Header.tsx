@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
-import { Stethoscope, LogOut } from 'lucide-react';
+import { Stethoscope, LogOut, Globe } from 'lucide-react';
 import './Header.css';
 
 interface HeaderProps {
@@ -11,7 +11,7 @@ interface HeaderProps {
 }
 
 export const Header = ({ showBackButton, onBack }: HeaderProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -26,6 +26,10 @@ export const Header = ({ showBackButton, onBack }: HeaderProps) => {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
   };
 
   // Close dropdown when clicking outside
@@ -85,6 +89,29 @@ export const Header = ({ showBackButton, onBack }: HeaderProps) => {
                     </span>
                   </div>
                   <span className="dropdown-email">{user?.email}</span>
+                </div>
+              </div>
+
+              <div className="dropdown-divider"></div>
+
+              <div className="language-switcher">
+                <div className="language-label">
+                  <Globe size={16} />
+                  <span>Language</span>
+                </div>
+                <div className="language-buttons">
+                  <button
+                    className={`language-btn ${i18n.language === 'en' ? 'active' : ''}`}
+                    onClick={() => changeLanguage('en')}
+                  >
+                    EN
+                  </button>
+                  <button
+                    className={`language-btn ${i18n.language === 'es' ? 'active' : ''}`}
+                    onClick={() => changeLanguage('es')}
+                  >
+                    ES
+                  </button>
                 </div>
               </div>
 
