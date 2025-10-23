@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,7 +21,10 @@ import {
   MapPin,
   Droplet,
   Weight,
-  Ruler
+  Ruler,
+  UserPlus,
+  Link,
+  Trash2
 } from 'lucide-react';
 import './MedicDashboard.css';
 
@@ -50,6 +53,15 @@ export const MedicDashboard = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [patientSearchQuery, setPatientSearchQuery] = useState('');
+  const [patientSearchResults, setPatientSearchResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [linking, setLinking] = useState<number | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ patientId: number; x: number; y: number } | null>(null);
+  const [unlinking, setUnlinking] = useState<number | null>(null);
+  const longPressTimer = React.useRef<NodeJS.Timeout | null>(null);
+  const justOpenedMenu = React.useRef<boolean>(false);
 
   useEffect(() => {
     document.title = 'Mi Medicina | Inicio';
@@ -171,6 +183,111 @@ export const MedicDashboard = () => {
     formik.resetForm();
   };
 
+  const handleCloseLinkModal = () => {
+    setShowLinkModal(false);
+    setPatientSearchQuery('');
+    setPatientSearchResults([]);
+  };
+
+  const searchPatients = async () => {
+    if (!patientSearchQuery.trim()) {
+      setPatientSearchResults([]);
+      return;
+    }
+
+    try {
+      setSearching(true);
+      const response = await api.get(`/medics/search-patients?q=${encodeURIComponent(patientSearchQuery)}`);
+      // Ensure we always get an array
+      const results = Array.isArray(response.data) ? response.data : [];
+      setPatientSearchResults(results);
+    } catch (error) {
+      console.error('Error searching patients:', error);
+      setPatientSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const linkToPatient = async (patientEmail: string, patientId: number) => {
+    try {
+      setLinking(patientId);
+      await api.post('/medics/link-patient', { patientEmail });
+      alert(t('medic.linkPatient.linkSuccess'));
+      setPatientSearchQuery('');
+      setPatientSearchResults([]);
+      setShowLinkModal(false);
+      queryClient.invalidateQueries({ queryKey: ['medic-patients'] });
+    } catch (error: any) {
+      console.error('Error linking to patient:', error);
+      alert(error.response?.data?.message || t('medic.linkPatient.linkError'));
+    } finally {
+      setLinking(null);
+    }
+  };
+
+  const unlinkFromPatient = async (patientId: number) => {
+    if (!window.confirm(t('medic.patients.unlinkConfirm'))) {
+      return;
+    }
+
+    try {
+      setUnlinking(patientId);
+      await api.delete(`/medics/unlink-patient/${patientId}`);
+      alert(t('medic.patients.unlinkSuccess'));
+      setContextMenu(null);
+      queryClient.invalidateQueries({ queryKey: ['medic-patients'] });
+    } catch (error: any) {
+      console.error('Error unlinking from patient:', error);
+      alert(error.response?.data?.message || t('medic.patients.unlinkError'));
+    } finally {
+      setUnlinking(null);
+    }
+  };
+
+  const handleLongPressStart = (patientId: number, event: React.MouseEvent | React.TouchEvent) => {
+    // Capture the rect before setTimeout to avoid React event pooling issues
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    longPressTimer.current = setTimeout(() => {
+      justOpenedMenu.current = true;
+      setContextMenu({
+        patientId,
+        x: rect.left + rect.width / 2,
+        y: rect.bottom + 5,
+      });
+    }, 500); // 500ms long press
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      // Ignore the first click that happens right after opening the menu
+      if (justOpenedMenu.current) {
+        justOpenedMenu.current = false;
+        return;
+      }
+      setContextMenu(null);
+    };
+
+    if (contextMenu) {
+      // Add a small delay to prevent the release event from immediately closing the menu
+      const timer = setTimeout(() => {
+        document.addEventListener('click', handleClickOutside);
+      }, 100);
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener('click', handleClickOutside);
+      };
+    }
+  }, [contextMenu]);
+
   const filteredPatients = patients.filter((patient: Patient) => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -232,13 +349,22 @@ export const MedicDashboard = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button
-              className="btn-create-patient"
-              onClick={() => setShowCreateModal(true)}
-            >
-              <Plus size={20} />
-              <span>{t('medic.createPatient.title')}</span>
-            </button>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                className="btn-link-patient"
+                onClick={() => setShowLinkModal(true)}
+              >
+                <Link size={20} />
+                <span>{t('medic.linkPatient.title')}</span>
+              </button>
+              <button
+                className="btn-create-patient"
+                onClick={() => setShowCreateModal(true)}
+              >
+                <Plus size={20} />
+                <span>{t('medic.createPatient.title')}</span>
+              </button>
+            </div>
           </div>
 
           {/* Error Message */}
@@ -283,6 +409,11 @@ export const MedicDashboard = () => {
                   key={patient.idPatient}
                   className="patient-card"
                   onClick={() => handleViewPatient(patient.idPatient)}
+                  onMouseDown={(e) => handleLongPressStart(patient.idPatient, e)}
+                  onMouseUp={handleLongPressEnd}
+                  onMouseLeave={handleLongPressEnd}
+                  onTouchStart={(e) => handleLongPressStart(patient.idPatient, e)}
+                  onTouchEnd={handleLongPressEnd}
                 >
                   <div className="patient-card-header">
                     <div className="patient-avatar">
@@ -323,6 +454,24 @@ export const MedicDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          className="patient-context-menu"
+          style={{ left: contextMenu.x, top: contextMenu.y, position: 'fixed', zIndex: 1000 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => unlinkFromPatient(contextMenu.patientId)}
+            disabled={unlinking === contextMenu.patientId}
+            className="context-menu-item danger"
+          >
+            <Trash2 size={16} />
+            <span>{t('medic.patients.unlinkButton')}</span>
+          </button>
+        </div>
+      )}
 
       {/* Patient Creation Modal */}
       {showCreateModal && (
@@ -542,6 +691,138 @@ export const MedicDashboard = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Link Existing Patient Modal */}
+      {showLinkModal && (
+        <div className="modal-overlay" onClick={handleCloseLinkModal}>
+          <div className="modal-content link-patient-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{t('medic.linkPatient.title')}</h2>
+              <button className="btn-close-modal" onClick={handleCloseLinkModal}>
+                <X size={24} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{ marginBottom: '1.5rem', color: '#64748b' }}>
+                {t('medic.linkPatient.description')}
+              </p>
+
+              <div className="search-box" style={{ marginBottom: '1.5rem' }}>
+                <input
+                  type="text"
+                  placeholder={t('medic.linkPatient.searchPlaceholder')}
+                  value={patientSearchQuery}
+                  onChange={(e) => setPatientSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && searchPatients()}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem 1rem',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '8px',
+                    fontSize: '1rem'
+                  }}
+                />
+                <button
+                  onClick={searchPatients}
+                  disabled={searching}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: '#667eea',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: searching ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <Search size={20} />
+                  {searching ? t('medic.linkPatient.searching') : t('medic.linkPatient.search')}
+                </button>
+              </div>
+
+              {Array.isArray(patientSearchResults) && patientSearchResults.length > 0 && (
+                <div className="search-results" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {patientSearchResults.map((patient: any) => (
+                    <div
+                      key={patient.idPatient}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        padding: '1rem',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px'
+                      }}
+                    >
+                      <div style={{
+                        width: '50px',
+                        height: '50px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.25rem',
+                        fontWeight: 600,
+                        flexShrink: 0
+                      }}>
+                        {patient.name?.charAt(0)}{patient.lname?.charAt(0)}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem', color: '#1a202c' }}>
+                          {patient.name} {patient.lname}
+                        </h4>
+                        <span style={{ color: '#718096', fontSize: '0.9rem' }}>{patient.email}</span>
+                        {patient.phone && (
+                          <span style={{ color: '#718096', fontSize: '0.9rem', marginLeft: '0.5rem' }}>
+                            • {patient.phone}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => linkToPatient(patient.email, patient.idPatient)}
+                        disabled={linking === patient.idPatient}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          background: '#48bb78',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: linking === patient.idPatient ? 'not-allowed' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          fontSize: '0.9rem',
+                          whiteSpace: 'nowrap',
+                          opacity: linking === patient.idPatient ? 0.6 : 1
+                        }}
+                      >
+                        {linking === patient.idPatient ? (
+                          t('medic.linkPatient.linking')
+                        ) : (
+                          <>
+                            <UserPlus size={16} />
+                            {t('medic.linkPatient.linkButton')}
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {patientSearchQuery && Array.isArray(patientSearchResults) && patientSearchResults.length === 0 && !searching && (
+                <p style={{ textAlign: 'center', color: '#718096', padding: '2rem' }}>
+                  {t('medic.linkPatient.noResults')}
+                </p>
+              )}
             </div>
           </div>
         </div>

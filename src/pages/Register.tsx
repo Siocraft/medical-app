@@ -12,6 +12,8 @@ export const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [userType, setUserType] = useState<'medic' | 'patient'>('patient');
+  const [doctorEmail, setDoctorEmail] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
@@ -38,7 +40,14 @@ export const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      await register({ name, lname, email, password, type: 'patient' });
+      const registrationData: any = { name, lname, email, password, type: userType };
+
+      // Add doctor email only if user is a patient and doctorEmail is provided
+      if (userType === 'patient' && doctorEmail.trim()) {
+        registrationData.doctorEmail = doctorEmail;
+      }
+
+      await register(registrationData);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || t('auth.register.error'));
@@ -96,6 +105,34 @@ export const Register: React.FC = () => {
               autoComplete="family-name"
             />
           </div>
+
+          <div className="form-group">
+            <label htmlFor="userType">{t('auth.register.userType')}</label>
+            <select
+              id="userType"
+              value={userType}
+              onChange={(e) => setUserType(e.target.value as 'medic' | 'patient')}
+              required
+            >
+              <option value="patient">{t('auth.register.patient')}</option>
+              <option value="medic">{t('auth.register.doctor')}</option>
+            </select>
+          </div>
+
+          {userType === 'patient' && (
+            <div className="form-group">
+              <label htmlFor="doctorEmail">{t('auth.register.doctorEmail')}</label>
+              <input
+                id="doctorEmail"
+                type="email"
+                value={doctorEmail}
+                onChange={(e) => setDoctorEmail(e.target.value)}
+                placeholder={t('auth.register.doctorEmailPlaceholder')}
+                autoComplete="email"
+              />
+              <small className="form-hint">{t('auth.register.doctorEmailHint')}</small>
+            </div>
+          )}
 
           <div className="form-group">
             <label htmlFor="email">{t('auth.register.email')}</label>

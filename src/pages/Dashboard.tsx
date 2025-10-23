@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { patientService } from '../services/patientService';
 import { Header } from '../components/Header';
+import { DoctorSection } from '../components/DoctorSection';
 import type { PatientData, Allergy, Vital, Lab, Vaccine, PathologicalRecord, Contact, PatientFile } from '../types';
 import {
   Mail,
@@ -62,6 +63,7 @@ export const Dashboard: React.FC = () => {
   }
 
   const patient = patientData?.patient;
+  const doctors = patientData?.doctors || [];
   const allergies = patientData?.allergies || [];
   const vitals = patientData?.vitals || [];
   const labs = patientData?.labs || [];
@@ -112,6 +114,9 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Doctor Section */}
+        <DoctorSection doctors={doctors} onDoctorLinked={loadPatientData} />
 
         {/* My Information Section */}
         <h2 className="patient-dashboard-section-title">{t('dashboard.patient.myInformation')}</h2>

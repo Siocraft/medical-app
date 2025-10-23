@@ -23,6 +23,7 @@ export interface RegisterCredentials {
   email: string;
   password: string;
   type: string;
+  doctorEmail?: string;
 }
 
 export interface Patient {

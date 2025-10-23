@@ -20,6 +20,12 @@
       "namePlaceholder": "Juan",
       "lname": "Apellido",
       "lnamePlaceholder": "Pérez",
+      "userType": "Soy un/a",
+      "patient": "Paciente",
+      "doctor": "Doctor/a",
+      "doctorEmail": "Correo del Doctor (Opcional)",
+      "doctorEmailPlaceholder": "doctor@ejemplo.com",
+      "doctorEmailHint": "Ingresa el correo de tu doctor para vincular tu cuenta con él/ella",
       "email": "Correo Electrónico",
       "emailPlaceholder": "tu@ejemplo.com",
       "password": "Contraseña",
@@ -41,7 +47,29 @@
     "patient": {
       "myInformation": "Mi Información",
       "myAppointments": "Mis Citas",
-      "myHealth": "Mi Salud"
+      "myHealth": "Mi Salud",
+      "myDoctor": "Mi Doctor"
+    },
+    "doctor": {
+      "title": "Tu Doctor",
+      "name": "Nombre",
+      "email": "Correo Electrónico",
+      "phone": "Teléfono",
+      "about": "Acerca de",
+      "noDoctor": "Aún no estás vinculado a un doctor",
+      "searchDoctor": "Buscar un Doctor",
+      "searchPlaceholder": "Buscar por nombre o correo...",
+      "noResults": "No se encontraron doctores",
+      "linkButton": "Vincular con este doctor",
+      "linking": "Vinculando...",
+      "linkSuccess": "¡Vinculado exitosamente al doctor!",
+      "linkError": "Error al vincular con el doctor",
+      "addDoctor": "Agregar Doctor",
+      "cancelAdd": "Cancelar",
+      "unlinkButton": "Remover doctor",
+      "unlinkConfirm": "¿Estás seguro de que deseas remover este doctor?",
+      "unlinkSuccess": "¡Doctor removido exitosamente!",
+      "unlinkError": "Error al remover el doctor"
     },
     "nav": {
       "overview": "Resumen",
@@ -111,7 +139,11 @@
       "lastVisit": "Última visita:",
       "appointments": "citas",
       "loadFailed": "Error al cargar pacientes",
-      "statusRecent": "Reciente"
+      "statusRecent": "Reciente",
+      "unlinkButton": "Remover paciente",
+      "unlinkConfirm": "¿Estás seguro de que deseas remover este paciente?",
+      "unlinkSuccess": "¡Paciente removido exitosamente!",
+      "unlinkError": "Error al remover el paciente"
     },
     "createPatient": {
       "title": "Crear Nuevo Paciente",
@@ -146,6 +178,18 @@
       "emailInvalid": "Dirección de correo electrónico inválida",
       "passwordRequired": "La contraseña es requerida",
       "passwordLength": "La contraseña debe tener al menos 6 caracteres"
+    },
+    "linkPatient": {
+      "title": "Vincular Paciente Existente",
+      "description": "Busca un paciente existente por nombre, correo electrónico o número de teléfono para vincularlo a tu cuenta.",
+      "searchPlaceholder": "Buscar por nombre, correo o teléfono...",
+      "searching": "Buscando...",
+      "search": "Buscar",
+      "linkButton": "Vincular",
+      "linking": "Vinculando...",
+      "noResults": "No se encontraron pacientes que coincidan con tu búsqueda.",
+      "linkSuccess": "¡Vinculado exitosamente al paciente!",
+      "linkError": "Error al vincular con el paciente"
     },
     "patientDetail": {
       "back": "Atrás",
@@ -192,6 +236,7 @@
     "height": "Altura",
     "bloodType": "Tipo de Sangre",
     "noData": "Sin datos disponibles",
+    "noAppointments": "No hay citas aún",
     "insurance": "Seguro Médico",
     "insuranceName": "Aseguradora",
     "provider": "Proveedor",

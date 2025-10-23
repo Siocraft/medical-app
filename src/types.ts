@@ -17,6 +17,7 @@ export interface RegisterCredentials {
   name: string;
   lname: string;
   type: 'patient' | 'medic';
+  doctorEmail?: string;
 }
 
 export interface AuthResponse {

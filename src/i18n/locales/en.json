@@ -20,6 +20,12 @@
       "namePlaceholder": "John",
       "lname": "Last Name",
       "lnamePlaceholder": "Doe",
+      "userType": "I am a",
+      "patient": "Patient",
+      "doctor": "Doctor",
+      "doctorEmail": "Doctor's Email (Optional)",
+      "doctorEmailPlaceholder": "doctor@example.com",
+      "doctorEmailHint": "Enter your doctor's email to link your account with them",
       "email": "Email Address",
       "emailPlaceholder": "you@example.com",
       "password": "Password",
@@ -41,7 +47,29 @@
     "patient": {
       "myInformation": "My Information",
       "myAppointments": "My Appointments",
-      "myHealth": "My Health"
+      "myHealth": "My Health",
+      "myDoctor": "My Doctor"
+    },
+    "doctor": {
+      "title": "Your Doctor",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "about": "About",
+      "noDoctor": "You are not linked to a doctor yet",
+      "searchDoctor": "Search for a Doctor",
+      "searchPlaceholder": "Search by name or email...",
+      "noResults": "No doctors found",
+      "linkButton": "Link to this doctor",
+      "linking": "Linking...",
+      "linkSuccess": "Successfully linked to doctor!",
+      "linkError": "Error linking to doctor",
+      "addDoctor": "Add Doctor",
+      "cancelAdd": "Cancel",
+      "unlinkButton": "Remove doctor",
+      "unlinkConfirm": "Are you sure you want to remove this doctor?",
+      "unlinkSuccess": "Successfully removed doctor!",
+      "unlinkError": "Error removing doctor"
     },
     "nav": {
       "overview": "Overview",
@@ -111,7 +139,11 @@
       "lastVisit": "Last visit:",
       "appointments": "appointments",
       "loadFailed": "Failed to load patients",
-      "statusRecent": "Recent"
+      "statusRecent": "Recent",
+      "unlinkButton": "Remove patient",
+      "unlinkConfirm": "Are you sure you want to remove this patient?",
+      "unlinkSuccess": "Successfully removed patient!",
+      "unlinkError": "Error removing patient"
     },
     "createPatient": {
       "title": "Create New Patient",
@@ -146,6 +178,18 @@
       "emailInvalid": "Invalid email address",
       "passwordRequired": "Password is required",
       "passwordLength": "Password must be at least 6 characters"
+    },
+    "linkPatient": {
+      "title": "Link Existing Patient",
+      "description": "Search for an existing patient by name, email, or phone number to link them to your account.",
+      "searchPlaceholder": "Search by name, email, or phone...",
+      "searching": "Searching...",
+      "search": "Search",
+      "linkButton": "Link",
+      "linking": "Linking...",
+      "noResults": "No patients found matching your search.",
+      "linkSuccess": "Successfully linked to patient!",
+      "linkError": "Error linking to patient"
     },
     "patientDetail": {
       "back": "Back",
@@ -192,6 +236,7 @@
     "height": "Height",
     "bloodType": "Blood Type",
     "noData": "No data available",
+    "noAppointments": "No appointments yet",
     "insurance": "Health Insurance",
     "insuranceName": "Insurance Provider",
     "provider": "Provider",
