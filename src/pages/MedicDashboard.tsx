@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useFormik } from 'formik';
 import { PatientCardSkeleton } from '../components/PatientCardSkeleton';
 import { Header } from '../components/Header';
 import api from '../services/api';
@@ -11,7 +12,16 @@ import {
   Activity,
   ChevronRight,
   AlertCircle,
-  UserCircle
+  UserCircle,
+  Plus,
+  X,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Droplet,
+  Weight,
+  Ruler
 } from 'lucide-react';
 import './MedicDashboard.css';
 
@@ -37,7 +47,9 @@ const fetchPatients = async () => {
 export const MedicDashboard = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     document.title = 'Mi Medicina | Inicio';
@@ -48,8 +60,115 @@ export const MedicDashboard = () => {
     queryFn: fetchPatients,
   });
 
+  // Mutation to create a new patient
+  const createPatientMutation = useMutation({
+    mutationFn: async (patientData: {
+      name: string;
+      lname: string;
+      email: string;
+      password: string;
+      phone: string;
+      address: string;
+      bloodGroup: '' | 'A' | 'B' | 'AB' | 'O';
+      bloodRh: '' | '+' | '-';
+      weight: string;
+      height: string;
+    }) => {
+      // Step 1: Create user account
+      const userResponse = await api.post('/auth/register', {
+        name: patientData.name,
+        lname: patientData.lname,
+        email: patientData.email,
+        password: patientData.password,
+        type: 'patient'
+      });
+
+      const newUserId = userResponse.data.user.idUser;
+
+      // Step 2: Create patient record
+      const patientPayload = {
+        idUser: newUserId,
+        email: patientData.email,
+        phone: patientData.phone || '0000000000',
+        extraPhone: '',
+        address: patientData.address || 'No especificada',
+        addressSpecific: '',
+        bloodGroup: patientData.bloodGroup || '',
+        bloodRh: patientData.bloodRh || '',
+        weight: patientData.weight ? parseFloat(patientData.weight) : undefined,
+        height: patientData.height ? parseInt(patientData.height) : undefined,
+        civilStatus: '',
+        policy: '',
+        origin: '',
+        originSent: '',
+        originPlace: '',
+        insuranceComment: ''
+      };
+
+      const patientResponse = await api.post('/patients', patientPayload);
+      return patientResponse.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['medic-patients'] });
+      setShowCreateModal(false);
+      formik.resetForm();
+      alert(t('medic.createPatient.success'));
+    },
+    onError: (error: any) => {
+      console.error('Error creating patient:', error);
+      alert(t('medic.createPatient.error') + ': ' + (error.response?.data?.message || error.message));
+    },
+  });
+
+  // Formik configuration
+  const formik = useFormik({
+    initialValues: {
+      name: '',
+      lname: '',
+      email: '',
+      password: '',
+      phone: '',
+      address: '',
+      bloodGroup: '' as '' | 'A' | 'B' | 'AB' | 'O',
+      bloodRh: '' as '' | '+' | '-',
+      weight: '',
+      height: ''
+    },
+    validate: (values) => {
+      const errors: any = {};
+
+      // Required fields
+      if (!values.name.trim()) {
+        errors.name = t('medic.createPatient.nameRequired') || 'First name is required';
+      }
+      if (!values.lname.trim()) {
+        errors.lname = t('medic.createPatient.lnameRequired') || 'Last name is required';
+      }
+      if (!values.email.trim()) {
+        errors.email = t('medic.createPatient.emailRequired') || 'Email is required';
+      } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)) {
+        errors.email = t('medic.createPatient.emailInvalid') || 'Invalid email address';
+      }
+      if (!values.password) {
+        errors.password = t('medic.createPatient.passwordRequired') || 'Password is required';
+      } else if (values.password.length < 6) {
+        errors.password = t('medic.createPatient.passwordLength') || 'Password must be at least 6 characters';
+      }
+
+      return errors;
+    },
+    onSubmit: (values) => {
+      createPatientMutation.mutate(values);
+    },
+  });
+
   const handleViewPatient = (patientId: number) => {
     navigate(`/medic/patient/${patientId}`);
+  };
+
+  const handleCloseModal = () => {
+    setShowCreateModal(false);
+    formik.resetForm();
   };
 
   const filteredPatients = patients.filter((patient: Patient) => {
@@ -102,15 +221,24 @@ export const MedicDashboard = () => {
             </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="search-bar">
-            <Search size={20} className="search-icon" />
-            <input
-              type="text"
-              placeholder={t('medic.patients.searchPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          {/* Search Bar and Actions */}
+          <div className="search-actions-bar">
+            <div className="search-bar">
+              <Search size={20} className="search-icon" />
+              <input
+                type="text"
+                placeholder={t('medic.patients.searchPlaceholder')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <button
+              className="btn-create-patient"
+              onClick={() => setShowCreateModal(true)}
+            >
+              <Plus size={20} />
+              <span>{t('medic.createPatient.title')}</span>
+            </button>
           </div>
 
           {/* Error Message */}
@@ -195,6 +323,229 @@ export const MedicDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Patient Creation Modal */}
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-content create-patient-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{t('medic.createPatient.title')}</h2>
+              <button className="btn-close-modal" onClick={handleCloseModal}>
+                <X size={24} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={formik.handleSubmit}>
+                <div className="form-grid">
+                  {/* Personal Information */}
+                  <div className="form-group">
+                    <label htmlFor="name">
+                      <User size={16} />
+                      {t('medic.createPatient.name')} *
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      value={formik.values.name}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder={t('medic.createPatient.namePlaceholder')}
+                      className={formik.touched.name && formik.errors.name ? 'input-error' : ''}
+                    />
+                    {formik.touched.name && formik.errors.name && (
+                      <span className="error-text">{formik.errors.name}</span>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="lname">
+                      <User size={16} />
+                      {t('medic.createPatient.lname')} *
+                    </label>
+                    <input
+                      type="text"
+                      id="lname"
+                      name="lname"
+                      value={formik.values.lname}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder={t('medic.createPatient.lnamePlaceholder')}
+                      className={formik.touched.lname && formik.errors.lname ? 'input-error' : ''}
+                    />
+                    {formik.touched.lname && formik.errors.lname && (
+                      <span className="error-text">{formik.errors.lname}</span>
+                    )}
+                  </div>
+
+                  {/* Contact Information */}
+                  <div className="form-group">
+                    <label htmlFor="email">
+                      <Mail size={16} />
+                      {t('medic.createPatient.email')} *
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formik.values.email}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder={t('medic.createPatient.emailPlaceholder')}
+                      className={formik.touched.email && formik.errors.email ? 'input-error' : ''}
+                    />
+                    {formik.touched.email && formik.errors.email && (
+                      <span className="error-text">{formik.errors.email}</span>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="password">
+                      {t('medic.createPatient.password')} *
+                    </label>
+                    <input
+                      type="password"
+                      id="password"
+                      name="password"
+                      value={formik.values.password}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder={t('medic.createPatient.passwordPlaceholder')}
+                      className={formik.touched.password && formik.errors.password ? 'input-error' : ''}
+                    />
+                    {formik.touched.password && formik.errors.password && (
+                      <span className="error-text">{formik.errors.password}</span>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="phone">
+                      <Phone size={16} />
+                      {t('medic.createPatient.phone')}
+                    </label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={formik.values.phone}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder={t('medic.createPatient.phonePlaceholder')}
+                    />
+                  </div>
+
+                  <div className="form-group form-group-full">
+                    <label htmlFor="address">
+                      <MapPin size={16} />
+                      {t('medic.createPatient.address')}
+                    </label>
+                    <input
+                      type="text"
+                      id="address"
+                      name="address"
+                      value={formik.values.address}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder={t('medic.createPatient.addressPlaceholder')}
+                    />
+                  </div>
+
+                  {/* Physical Information */}
+                  <div className="form-group">
+                    <label htmlFor="weight">
+                      <Weight size={16} />
+                      {t('medic.createPatient.weight')}
+                    </label>
+                    <input
+                      type="number"
+                      id="weight"
+                      name="weight"
+                      step="0.1"
+                      value={formik.values.weight}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder={t('medic.createPatient.weightPlaceholder')}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="height">
+                      <Ruler size={16} />
+                      {t('medic.createPatient.height')}
+                    </label>
+                    <input
+                      type="number"
+                      id="height"
+                      name="height"
+                      value={formik.values.height}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder={t('medic.createPatient.heightPlaceholder')}
+                    />
+                  </div>
+
+                  {/* Blood Type */}
+                  <div className="form-group">
+                    <label htmlFor="bloodGroup">
+                      <Droplet size={16} />
+                      {t('medic.createPatient.bloodGroup')}
+                    </label>
+                    <select
+                      id="bloodGroup"
+                      name="bloodGroup"
+                      value={formik.values.bloodGroup}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                    >
+                      <option value="">{t('medic.createPatient.selectBloodGroup')}</option>
+                      <option value="A">A</option>
+                      <option value="B">B</option>
+                      <option value="AB">AB</option>
+                      <option value="O">O</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="bloodRh">
+                      {t('medic.createPatient.bloodRh')}
+                    </label>
+                    <select
+                      id="bloodRh"
+                      name="bloodRh"
+                      value={formik.values.bloodRh}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                    >
+                      <option value="">{t('medic.createPatient.selectBloodRh')}</option>
+                      <option value="+">+</option>
+                      <option value="-">-</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={handleCloseModal}
+                  >
+                    {t('medic.createPatient.cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-submit"
+                    disabled={createPatientMutation.isPending}
+                  >
+                    {createPatientMutation.isPending
+                      ? t('medic.createPatient.creating')
+                      : t('medic.createPatient.create')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

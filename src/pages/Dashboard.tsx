@@ -1,17 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../contexts/AuthContext';
 import { patientService } from '../services/patientService';
 import { Header } from '../components/Header';
-import type { PatientData } from '../types';
+import type { PatientData, Allergy, Vital, Lab, Vaccine, PathologicalRecord, Contact, PatientFile } from '../types';
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  User,
+  Heart,
+  Activity,
+  FileText,
+  Syringe,
+  Beaker,
+  Pill,
+  Cigarette,
+  Wine,
+  Dumbbell,
+  ShieldAlert,
+  Users,
+  File,
+  AlertTriangle,
+  Weight,
+  Ruler
+} from 'lucide-react';
 import './Dashboard.css';
+import './PatientDetail.css';
 
 export const Dashboard: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { user } = useAuth();
   const [patientData, setPatientData] = useState<PatientData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<'overview' | 'history' | 'allergies' | 'medications'>('overview');
 
   useEffect(() => {
     loadPatientData();
@@ -41,269 +61,451 @@ export const Dashboard: React.FC = () => {
     );
   }
 
+  const patient = patientData?.patient;
+  const allergies = patientData?.allergies || [];
+  const vitals = patientData?.vitals || [];
+  const labs = patientData?.labs || [];
+  const vaccines = patientData?.vaccines || [];
+  const pathologicalRecords = patientData?.pathologicalRecords || [];
+  const contacts = patientData?.contacts || [];
+  const lifestyle = patientData?.lifestyle;
+  const insurance = patientData?.insurance;
+  const profession = patientData?.profession;
+  const religion = patientData?.religion;
+  const documentType = patientData?.documentType;
+  const files = patientData?.files || [];
+  const appointments = patientData?.clinicalHistories || [];
+
   return (
     <div className="dashboard">
       <Header />
 
-      <div className="dashboard-layout">
-        <aside className="dashboard-sidebar">
-          <nav className="sidebar-nav">
-            <button
-              className={`nav-item ${activeSection === 'overview' ? 'active' : ''}`}
-              onClick={() => setActiveSection('overview')}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
-              </svg>
-              {t('dashboard.nav.overview')}
-            </button>
-            <button
-              className={`nav-item ${activeSection === 'history' ? 'active' : ''}`}
-              onClick={() => setActiveSection('history')}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
-              </svg>
-              {t('dashboard.nav.history')}
-            </button>
-            <button
-              className={`nav-item ${activeSection === 'allergies' ? 'active' : ''}`}
-              onClick={() => setActiveSection('allergies')}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
-              </svg>
-              {t('dashboard.nav.allergies')}
-            </button>
-            <button
-              className={`nav-item ${activeSection === 'medications' ? 'active' : ''}`}
-              onClick={() => setActiveSection('medications')}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clipRule="evenodd"/>
-              </svg>
-              {t('dashboard.nav.medications')}
-            </button>
-          </nav>
-        </aside>
-
-        <main className="dashboard-main">
-          {activeSection === 'overview' && (
-            <div className="section">
-              <h2>{t('dashboard.welcome', { name: user?.name })}</h2>
-              <div className="cards-grid">
-                <div className="info-card">
-                  <div className="card-icon blue">
-                    <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
-                    </svg>
+      <div className="patient-dashboard-container">
+        {/* Patient Header */}
+        <div className="patient-dashboard-header">
+          <div className="patient-dashboard-header-content">
+            <div className="patient-dashboard-avatar">
+              {patient?.name?.charAt(0)}{patient?.lname?.charAt(0)}
+            </div>
+            <div className="patient-dashboard-info">
+              <h1>{patient?.name} {patient?.lname}</h1>
+              <div className="patient-dashboard-contact">
+                {patient?.email && (
+                  <div className="patient-dashboard-contact-item">
+                    <Mail size={16} />
+                    <span>{patient.email}</span>
                   </div>
-                  <div className="card-content">
-                    <h3>{t('dashboard.overview.medicalRecords')}</h3>
-                    <p className="card-value">{patientData?.clinicalHistories?.length || 0}</p>
-                    <p className="card-label">{t('dashboard.overview.totalAppointments')}</p>
+                )}
+                {patient?.phone && (
+                  <div className="patient-dashboard-contact-item">
+                    <Phone size={16} />
+                    <span>{patient.phone}</span>
                   </div>
-                </div>
-
-                <div className="info-card">
-                  <div className="card-icon red">
-                    <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
-                    </svg>
+                )}
+                {patient?.address && (
+                  <div className="patient-dashboard-contact-item">
+                    <MapPin size={16} />
+                    <span>{patient.address}</span>
                   </div>
-                  <div className="card-content">
-                    <h3>{t('dashboard.overview.allergies')}</h3>
-                    <p className="card-value">{patientData?.allergies?.length || 0}</p>
-                    <p className="card-label">{t('dashboard.overview.registeredAllergies')}</p>
-                  </div>
-                </div>
-
-                <div className="info-card">
-                  <div className="card-icon green">
-                    <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clipRule="evenodd"/>
-                    </svg>
-                  </div>
-                  <div className="card-content">
-                    <h3>{t('dashboard.overview.activeMedications')}</h3>
-                    <p className="card-value">{patientData?.medications?.length || 0}</p>
-                    <p className="card-label">{t('dashboard.overview.currentPrescriptions')}</p>
-                  </div>
-                </div>
-
-                <div className="info-card">
-                  <div className="card-icon purple">
-                    <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
-                      <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/>
-                    </svg>
-                  </div>
-                  <div className="card-content">
-                    <h3>{t('dashboard.overview.latestVitals')}</h3>
-                    <p className="card-value">{patientData?.vitals?.length ? t('dashboard.overview.available') : t('dashboard.overview.na')}</p>
-                    <p className="card-label">{t('dashboard.overview.recentMeasurements')}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="info-banner">
-                <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
-                </svg>
-                <div>
-                  <h4>{t('dashboard.overview.securityBanner.title')}</h4>
-                  <p>{t('dashboard.overview.securityBanner.description')}</p>
-                </div>
+                )}
               </div>
             </div>
-          )}
+          </div>
+        </div>
 
-          {activeSection === 'history' && (
-            <div className="section">
-              <h2>{t('dashboard.history.title')}</h2>
-              {patientData?.clinicalHistories && patientData.clinicalHistories.length > 0 ? (
-                <div className="records-list">
-                  {patientData.clinicalHistories.map((record: any) => (
-                    <div key={record.idHistory} className="record-card">
-                      <div className="record-header">
-                        <div className="record-title-section">
-                          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" className="record-icon">
-                            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
-                          </svg>
-                          <div>
-                            <h3>{new Date(record.date).toLocaleDateString(i18n.language, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
-                            <p className="record-time">{new Date(record.start).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}</p>
-                          </div>
+        {/* My Information Section */}
+        <h2 className="patient-dashboard-section-title">{t('dashboard.patient.myInformation')}</h2>
+
+        {/* Demographics & Physical Info Grid */}
+        <div className="info-sections-grid">
+          {/* Demographics Panel */}
+          <div className="info-section">
+            <h3 className="section-title">
+              <User size={20} />
+              {t('patientDetail.demographics')}
+            </h3>
+            <div className="section-content">
+              {patient?.civilStatus && (
+                <div className="info-row">
+                  <span className="info-row-label">{t('patientDetail.civilStatus')}</span>
+                  <span className="info-row-value">{patient.civilStatus}</span>
+                </div>
+              )}
+              {profession && (
+                <div className="info-row">
+                  <span className="info-row-label">{t('patientDetail.profession')}</span>
+                  <span className="info-row-value">{profession.name}</span>
+                </div>
+              )}
+              {religion && (
+                <div className="info-row">
+                  <span className="info-row-label">{t('patientDetail.religion')}</span>
+                  <span className="info-row-value">{religion.name}</span>
+                </div>
+              )}
+              {documentType && (
+                <div className="info-row">
+                  <span className="info-row-label">{t('patientDetail.documentType')}</span>
+                  <span className="info-row-value">{documentType.name}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Physical Info */}
+          <div className="info-section">
+            <h3 className="section-title">
+              <Activity size={20} />
+              {t('patientDetail.physicalInfo')}
+            </h3>
+            <div className="section-content">
+              {patient?.weight && (
+                <div className="info-row">
+                  <span className="info-row-label">
+                    <Weight size={16} />
+                    {t('patientDetail.weight')}
+                  </span>
+                  <span className="info-row-value">{patient.weight} kg</span>
+                </div>
+              )}
+              {patient?.height && (
+                <div className="info-row">
+                  <span className="info-row-label">
+                    <Ruler size={16} />
+                    {t('patientDetail.height')}
+                  </span>
+                  <span className="info-row-value">{patient.height} cm</span>
+                </div>
+              )}
+              {patient?.bloodGroup && patient?.bloodRh && (
+                <div className="info-row">
+                  <span className="info-row-label">{t('patientDetail.bloodType')}</span>
+                  <span className="info-row-value blood-type-badge">{patient.bloodGroup}{patient.bloodRh}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Insurance Info */}
+        {insurance && (
+          <div className="info-section">
+            <h3 className="section-title">
+              <ShieldAlert size={20} />
+              {t('patientDetail.insurance')}
+            </h3>
+            <div className="section-content">
+              {insurance.name && (
+                <div className="info-row">
+                  <span className="info-row-label">{t('patientDetail.insuranceName')}</span>
+                  <span className="info-row-value">{insurance.name}</span>
+                </div>
+              )}
+              {insurance.provider && (
+                <div className="info-row">
+                  <span className="info-row-label">{t('patientDetail.provider')}</span>
+                  <span className="info-row-value">{insurance.provider}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* My Appointments Section */}
+        <h2 className="patient-dashboard-section-title">{t('dashboard.patient.myAppointments')}</h2>
+
+        {appointments.length > 0 ? (
+          <div className="appointments-list">
+            {appointments.map((appointment: any) => (
+              <div key={appointment.idHistory} className="appointment-card">
+                <div className="appointment-header">
+                  <div className="appointment-date">
+                    <Calendar size={20} />
+                    <div>
+                      <h4>{new Date(appointment.date).toLocaleDateString(i18n.language, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h4>
+                      <p className="appointment-time">{new Date(appointment.start).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                  </div>
+                  <span className={`appointment-status ${appointment.closed ? 'closed' : 'open'}`}>
+                    {appointment.closed ? t('patientDetail.statusClosed') : t('patientDetail.statusOpen')}
+                  </span>
+                </div>
+                {appointment.motive && (
+                  <div className="appointment-detail">
+                    <h5>{t('patientDetail.reason')}</h5>
+                    <p>{appointment.motive}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-section">
+            <Calendar size={48} />
+            <h3>{t('patientDetail.noAppointments')}</h3>
+          </div>
+        )}
+
+        {/* My Health Section */}
+        <h2 className="patient-dashboard-section-title">{t('dashboard.patient.myHealth')}</h2>
+
+        {/* Allergies Section */}
+        {allergies.length > 0 && (
+          <div className="info-section">
+            <h3 className="section-title">
+              <AlertTriangle size={20} />
+              {t('patientDetail.allergies')} ({allergies.length})
+            </h3>
+            <div className="section-content">
+              <div className="allergies-list">
+                {allergies.map((allergy: Allergy) => (
+                  <div key={allergy.idPatientAllergy} className="allergy-item">
+                    <div className="allergy-header">
+                      <span className="allergy-name">{allergy.allergyName || allergy.name || 'Unknown'}</span>
+                      {allergy.severity && <span className={`severity-badge ${allergy.severity.toLowerCase()}`}>{allergy.severity}</span>}
+                    </div>
+                    {allergy.reaction && <p className="allergy-reaction">{allergy.reaction}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Pathological Records */}
+        {pathologicalRecords.length > 0 && (
+          <div className="info-section">
+            <h3 className="section-title">
+              <FileText size={20} />
+              {t('patientDetail.pathologicalRecords')} ({pathologicalRecords.length})
+            </h3>
+            <div className="section-content">
+              <div className="pathological-list">
+                {pathologicalRecords.map((record: PathologicalRecord) => (
+                  <div key={record.idRecord} className="pathological-item">
+                    <div className="pathological-header">
+                      <span className="pathological-name">{record.condition || 'Unknown'}</span>
+                      {record.status && <span className={`status-badge ${record.status.toLowerCase()}`}>{record.status}</span>}
+                    </div>
+                    {record.notes && <p className="pathological-notes">{record.notes}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Vitals Timeline */}
+        {vitals.length > 0 && (
+          <div className="info-section">
+            <h3 className="section-title">
+              <Activity size={20} />
+              {t('patientDetail.vitals')} ({vitals.length})
+            </h3>
+            <div className="section-content">
+              <div className="vitals-timeline">
+                {vitals.slice(0, 5).map((vital: Vital) => (
+                  <div key={vital.idVital} className="vital-entry">
+                    <div className="vital-date">{new Date(vital.date).toLocaleDateString(i18n.language)}</div>
+                    <div className="vital-metrics">
+                      {vital.systolic && vital.diastolic && (
+                        <div className="vital-metric">
+                          <Heart size={16} />
+                          <span>{vital.systolic}/{vital.diastolic} mmHg</span>
                         </div>
-                        <span className={`record-status ${record.closed ? 'closed' : 'open'}`}>
-                          {record.closed ? t('dashboard.history.statusClosed') : t('dashboard.history.statusOpen')}
-                        </span>
-                      </div>
+                      )}
+                      {vital.heartRate && (
+                        <div className="vital-metric">
+                          <Activity size={16} />
+                          <span>{vital.heartRate} bpm</span>
+                        </div>
+                      )}
+                      {vital.temperature && (
+                        <div className="vital-metric">
+                          <span>{vital.temperature}°C</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
-                      <div className="record-details">
-                        {record.diagnosis && record.diagnosis.length > 0 && (
-                          <div className="record-section">
-                            <h4>
-                              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
-                              </svg>
-                              Diagnósticos
-                            </h4>
-                            <span className="badge">{record.diagnosis.length} diagnóstico(s)</span>
-                          </div>
-                        )}
+        {/* Lab Results */}
+        {labs.length > 0 && (
+          <div className="info-section">
+            <h3 className="section-title">
+              <Beaker size={20} />
+              {t('patientDetail.labResults')} ({labs.length})
+            </h3>
+            <div className="section-content">
+              <div className="labs-list">
+                {labs.slice(0, 10).map((lab: Lab) => (
+                  <div key={lab.idLabs} className="lab-item">
+                    <div className="lab-date">{new Date(lab.date).toLocaleDateString(i18n.language)}</div>
+                    <div className="lab-details">
+                      <span className="lab-name">{lab.testName || `Lab Test #${lab.idContent}`}</span>
+                      <span className="lab-result">{lab.value}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
-                        {record.medications && record.medications.length > 0 && (
-                          <div className="record-section">
-                            <h4>
-                              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1z" clipRule="evenodd"/>
-                              </svg>
-                              Medicamentos
-                            </h4>
-                            <div className="medications-list">
-                              {record.medications.slice(0, 3).map((med: any, idx: number) => (
-                                <span key={idx} className="medication-tag">{med.productName || med.productVmpName}</span>
-                              ))}
-                              {record.medications.length > 3 && (
-                                <span className="badge">+{record.medications.length - 3} más</span>
-                              )}
-                            </div>
-                          </div>
-                        )}
+        {/* Vaccinations */}
+        {vaccines.length > 0 && (
+          <div className="info-section">
+            <h3 className="section-title">
+              <Syringe size={20} />
+              {t('patientDetail.vaccinations')} ({vaccines.length})
+            </h3>
+            <div className="section-content">
+              <div className="vaccines-list">
+                {vaccines.map((vaccine: Vaccine) => (
+                  <div key={vaccine.idVaccine} className="vaccine-item">
+                    <div className="vaccine-date">{new Date(vaccine.date).toLocaleDateString(i18n.language)}</div>
+                    <div className="vaccine-details">
+                      <span className="vaccine-name">{vaccine.vaccineName || 'Vaccine'}</span>
+                      {vaccine.dose && <span className="vaccine-dose">Dose: {vaccine.dose}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
-                        {record.notes && record.notes.length > 0 && record.notes[0].content && (
-                          <div className="record-section">
-                            <h4>
-                              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
-                                <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/>
-                              </svg>
-                              Notas clínicas
-                            </h4>
-                            <p className="clinical-note">{record.notes[0].content.substring(0, 150)}{record.notes[0].content.length > 150 ? '...' : ''}</p>
-                          </div>
-                        )}
+        {/* Lifestyle Information */}
+        {lifestyle && (lifestyle.alcohol || lifestyle.tobacco || lifestyle.drugs || lifestyle.physicalActivity) && (
+          <div className="info-section">
+            <h3 className="section-title">
+              <Dumbbell size={20} />
+              {t('patientDetail.lifestyle')}
+            </h3>
+            <div className="section-content">
+              <div className="lifestyle-grid">
+                {lifestyle.alcohol && (
+                  <div className="lifestyle-item">
+                    <div className="lifestyle-icon alcohol">
+                      <Wine size={20} />
+                    </div>
+                    <div className="lifestyle-details">
+                      <h5>{t('patientDetail.alcohol')}</h5>
+                      <p>{lifestyle.alcohol.frequency || 'Not specified'}</p>
+                      {lifestyle.alcohol.quantity && <span className="lifestyle-note">{lifestyle.alcohol.quantity}</span>}
+                    </div>
+                  </div>
+                )}
+                {lifestyle.tobacco && (
+                  <div className="lifestyle-item">
+                    <div className="lifestyle-icon tobacco">
+                      <Cigarette size={20} />
+                    </div>
+                    <div className="lifestyle-details">
+                      <h5>{t('patientDetail.tobacco')}</h5>
+                      <p>{lifestyle.tobacco.frequency || 'Not specified'}</p>
+                      {lifestyle.tobacco.yearsUsing && <span className="lifestyle-note">{lifestyle.tobacco.yearsUsing} years</span>}
+                    </div>
+                  </div>
+                )}
+                {lifestyle.drugs && (
+                  <div className="lifestyle-item">
+                    <div className="lifestyle-icon drugs">
+                      <Pill size={20} />
+                    </div>
+                    <div className="lifestyle-details">
+                      <h5>{t('patientDetail.drugs')}</h5>
+                      <p>{lifestyle.drugs.type || 'Not specified'}</p>
+                      {lifestyle.drugs.frequency && <span className="lifestyle-note">{lifestyle.drugs.frequency}</span>}
+                    </div>
+                  </div>
+                )}
+                {lifestyle.physicalActivity && (
+                  <div className="lifestyle-item">
+                    <div className="lifestyle-icon physical">
+                      <Dumbbell size={20} />
+                    </div>
+                    <div className="lifestyle-details">
+                      <h5>{t('patientDetail.physicalActivity')}</h5>
+                      <p>{lifestyle.physicalActivity.frequency || 'Not specified'}</p>
+                      {lifestyle.physicalActivity.type && <span className="lifestyle-note">{lifestyle.physicalActivity.type}</span>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
-                        {(!record.diagnosis || record.diagnosis.length === 0) &&
-                         (!record.medications || record.medications.length === 0) &&
-                         (!record.notes || record.notes.length === 0 || !record.notes[0].content) && (
-                          <div className="record-section">
-                            <p className="no-details">Sin detalles adicionales registrados</p>
-                          </div>
-                        )}
+        {/* Emergency Contacts */}
+        {contacts.length > 0 && (
+          <div className="info-section">
+            <h3 className="section-title">
+              <Users size={20} />
+              {t('patientDetail.emergencyContacts')} ({contacts.length})
+            </h3>
+            <div className="section-content">
+              <div className="contacts-list">
+                {contacts.map((contact: Contact) => (
+                  <div key={contact.idContact} className="contact-item">
+                    <div className="contact-header">
+                      <User size={18} />
+                      <div>
+                        <h5 className="contact-name">{contact.name || 'Unknown'}</h5>
+                        {contact.relationship && <span className="contact-relationship">{contact.relationship}</span>}
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <svg width="64" height="64" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
-                  </svg>
-                  <h3>{t('dashboard.history.empty.title')}</h3>
-                  <p>{t('dashboard.history.empty.description')}</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeSection === 'allergies' && (
-            <div className="section">
-              <h2>{t('dashboard.allergies.title')}</h2>
-              {patientData?.allergies && patientData.allergies.length > 0 ? (
-                <div className="list-items">
-                  {patientData.allergies.map((allergy, index) => (
-                    <div key={index} className="list-item">
-                      <div className="item-icon red">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92z" clipRule="evenodd"/>
-                        </svg>
-                      </div>
-                      <span>{allergy}</span>
+                    <div className="contact-details">
+                      {contact.phone && (
+                        <div className="contact-detail-item">
+                          <Phone size={14} />
+                          <span>{contact.phone}</span>
+                        </div>
+                      )}
+                      {contact.email && (
+                        <div className="contact-detail-item">
+                          <Mail size={14} />
+                          <span>{contact.email}</span>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <svg width="64" height="64" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
-                  </svg>
-                  <h3>{t('dashboard.allergies.empty.title')}</h3>
-                  <p>{t('dashboard.allergies.empty.description')}</p>
-                </div>
-              )}
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {activeSection === 'medications' && (
-            <div className="section">
-              <h2>{t('dashboard.medications.title')}</h2>
-              {patientData?.medications && patientData.medications.length > 0 ? (
-                <div className="list-items">
-                  {patientData.medications.map((medication, index) => (
-                    <div key={index} className="list-item">
-                      <div className="item-icon green">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1z" clipRule="evenodd"/>
-                        </svg>
-                      </div>
-                      <span>{medication}</span>
+        {/* Documents/Files */}
+        {files.length > 0 && (
+          <div className="info-section">
+            <h3 className="section-title">
+              <File size={20} />
+              {t('patientDetail.documents')} ({files.length})
+            </h3>
+            <div className="section-content">
+              <div className="files-list">
+                {files.map((file: PatientFile) => (
+                  <div key={file.idFile} className="file-item">
+                    <File size={18} />
+                    <div className="file-details">
+                      <span className="file-name">{file.name || 'Document'}</span>
+                      {file.date && <span className="file-date">{new Date(file.date).toLocaleDateString(i18n.language)}</span>}
+                      <span className="file-type">{file.mainType}</span>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <svg width="64" height="64" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1z" clipRule="evenodd"/>
-                  </svg>
-                  <h3>{t('dashboard.medications.empty.title')}</h3>
-                  <p>{t('dashboard.medications.empty.description')}</p>
-                </div>
-              )}
+                    <div className="file-code-small">
+                      <span className="file-code-value">{file.code}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
-        </main>
+          </div>
+        )}
       </div>
     </div>
   );
