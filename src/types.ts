@@ -42,6 +42,9 @@ export interface Patient {
   education?: number;
   profession?: number;
   religion?: number;
+  idInsurance?: number;
+  policy?: string;
+  insuranceComment?: string;
 }
 
 export interface Doctor {
@@ -66,23 +69,88 @@ export interface ClinicalHistoryBackground {
   idPatient: number;
 }
 
+export interface ClinicalHistory {
+  idHistory: number;
+  idUser: number;
+  idPatient: number;
+  date: string;
+  start: string;
+  end?: string;
+  closed: boolean;
+  isEvolution: boolean;
+  diagnosisIds?: string;
+  medications?: string;
+  motive?: string;
+  notes?: string;
+}
+
+export interface LifestyleData {
+  alcohol?: {
+    frequency?: string;
+    quantity?: string;
+    type?: string;
+    date?: string;
+  };
+  tobacco?: {
+    frequency?: string;
+    quantity?: string;
+    yearsUsing?: number;
+    date?: string;
+  };
+  drugs?: {
+    type?: string;
+    frequency?: string;
+    date?: string;
+  };
+  physicalActivity?: {
+    frequency?: string;
+    type?: string;
+    duration?: string;
+    date?: string;
+  };
+}
+
+export interface Insurance {
+  idInsurance: number;
+  name?: string;
+  type?: string;
+  provider?: string;
+  contactInfo?: string;
+}
+
+export interface Profession {
+  idProfession: number;
+  name?: string;
+}
+
+export interface Religion {
+  idReligion: number;
+  name?: string;
+}
+
+export interface DocumentType {
+  idDocument: number;
+  name?: string;
+  code?: string;
+}
+
 export interface PatientData {
-  patient: any;
-  history?: any[];
+  patient: Patient;
+  history?: ClinicalHistory[];
   allergies?: Allergy[];
   vitals?: Vital[];
   labs?: Lab[];
   vaccines?: Vaccine[];
   pathologicalRecords?: PathologicalRecord[];
   contacts?: Contact[];
-  lifestyle?: any;
-  insurance?: any;
-  profession?: { name: string };
-  religion?: { name: string };
+  lifestyle?: LifestyleData;
+  insurance?: Insurance;
+  profession?: Profession;
+  religion?: Religion;
   nationality?: { name: string };
   education?: { name: string };
-  documentType?: { name: string };
-  clinicalHistories?: any[];
+  documentType?: DocumentType;
+  clinicalHistories?: ClinicalHistory[];
   clinicalHistoryBackground?: ClinicalHistoryBackground | null;
   files?: PatientFile[];
   doctors?: Doctor[];
@@ -172,4 +240,138 @@ export interface PatientFile {
   day: number;
   interpretation: string | null;
   user: number | null;
+}
+
+// Extended Appointment interface (extends ClinicalHistory with additional fields)
+export interface Appointment extends ClinicalHistory {
+  idAppointment?: number;
+  diagnosisNames?: string;
+}
+
+// Subsequent Note Data
+export interface SubsequentNoteData {
+  date?: string;
+  motive?: string;
+  diagnosis?: string;
+  treatment?: string;
+  notes?: string;
+}
+
+// Mutation data types for creating/updating entities
+export interface CreateAppointmentData {
+  idPatient: number;
+  date: string;
+  motive?: string;
+  diagnosis?: string;
+  treatment?: string;
+  notes?: string;
+  isEvolution?: boolean;
+}
+
+export interface UpdateAppointmentData {
+  date?: string;
+  motive?: string;
+  diagnosis?: string;
+  treatment?: string;
+  notes?: string;
+}
+
+export interface CreateAllergyData {
+  allergyName: string;
+  severity: string;
+  type: string;
+  reaction: string;
+  date?: string;
+}
+
+export interface UpdateAllergyData {
+  allergyName?: string;
+  severity?: string;
+  type?: string;
+  reaction?: string;
+  date?: string;
+}
+
+export interface CreateVitalData {
+  date: string;
+  systolic?: number;
+  diastolic?: number;
+  heartRate?: number;
+  temperature?: number;
+  respiratoryRate?: number;
+  oxygenSaturation?: number;
+  weight?: number;
+  height?: number;
+  bmi?: number;
+}
+
+export interface CreateVaccineData {
+  vaccineName: string;
+  date: string;
+  nextDose?: string;
+  dose?: string;
+  manufacturer?: string;
+  lotNumber?: string;
+}
+
+export interface UpdateVaccineData {
+  vaccineName?: string;
+  date?: string;
+  nextDose?: string;
+  dose?: string;
+  manufacturer?: string;
+  lotNumber?: string;
+}
+
+export interface CreateLabData {
+  idContent: number;
+  value: number;
+  date: string;
+  unit?: string;
+  referenceRange?: string;
+  comment?: string | null;
+}
+
+export interface CreateContactData {
+  name: string;
+  relationship?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+}
+
+export interface UpdateContactData {
+  name?: string;
+  relationship?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+}
+
+// Lab Test interface
+export interface LabTest {
+  idContent: number;
+  name: string;
+  category?: string;
+}
+
+// Insurance List Item interface
+export interface InsuranceListItem {
+  idInsurance: number;
+  name: string;
+  type?: string;
+  provider?: string;
+}
+
+// API Error interface
+export interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+    status?: number;
+    statusText?: string;
+  };
+  message?: string;
+  code?: string;
 }

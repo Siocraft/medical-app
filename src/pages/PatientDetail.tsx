@@ -41,9 +41,25 @@ import type {
   Lab,
   Vaccine,
   Contact,
-  PatientFile
+  PatientFile,
+  Appointment,
+  SubsequentNoteData,
+  CreateAppointmentData,
+  UpdateAppointmentData,
+  CreateAllergyData,
+  UpdateAllergyData,
+  CreateVitalData,
+  CreateVaccineData,
+  UpdateVaccineData,
+  CreateLabData,
+  CreateContactData,
+  UpdateContactData,
+  LabTest,
+  InsuranceListItem,
+  ApiError
 } from '../types';
 
+// Local Patient interface for PatientDetail (more specific than global Patient)
 interface Patient {
   idPatient: number;
   idUser: number;
@@ -61,31 +77,9 @@ interface Patient {
   education?: number;
   profession?: number;
   religion?: number;
-}
-
-interface Appointment {
-  idHistory: number;
-  idAppointment?: number;
-  idUser: number;
-  idPatient: number;
-  date: string;
-  start: string;
-  end?: string;
-  motive?: string;
-  diagnosisIds?: string;
-  diagnosisNames?: string;
-  medications?: string;
-  notes?: string;
-  isEvolution: boolean;
-  closed: boolean;
-}
-
-interface SubsequentNoteData {
-  date?: string;
-  motive?: string;
-  diagnosis?: string;
-  treatment?: string;
-  notes?: string;
+  idInsurance?: number;
+  policy?: string;
+  insuranceComment?: string;
 }
 
 // API functions
@@ -211,10 +205,10 @@ export const PatientDetail = () => {
   });
 
   // Fetch insurance list
-  const { data: insurancesList, isLoading: isLoadingInsurances, error: insurancesError } = useQuery({
+  const { data: insurancesList, isLoading: isLoadingInsurances, error: insurancesError } = useQuery<InsuranceListItem[]>({
     queryKey: ['insurances'],
     queryFn: async () => {
-      const response = await api.get('/patients/insurances/list');
+      const response = await api.get<InsuranceListItem[]>('/patients/insurances/list');
       return response.data;
     },
   });
@@ -290,7 +284,7 @@ export const PatientDetail = () => {
 
   // Mutation for creating appointment
   const createAppointmentMutation = useMutation({
-    mutationFn: async (appointmentData: any) => {
+    mutationFn: async (appointmentData: CreateAppointmentData) => {
       const response = await api.post('/clinical-history', appointmentData);
       return response.data;
     },
@@ -327,8 +321,12 @@ export const PatientDetail = () => {
   });
 
   const handleAddAppointment = () => {
+    if (!patient?.idPatient) {
+      alert(t('medic.patientDetail.errorLoading'));
+      return;
+    }
     createAppointmentMutation.mutate({
-      idPatient: patient?.idPatient,
+      idPatient: patient.idPatient,
       date: newAppointment.date,
       motive: newAppointment.motive,
       diagnosis: newAppointment.diagnosis,
@@ -376,7 +374,7 @@ export const PatientDetail = () => {
 
   // Mutation for updating appointment
   const updateAppointmentMutation = useMutation({
-    mutationFn: async ({ appointmentId, updates }: { appointmentId: number; updates: any }) => {
+    mutationFn: async ({ appointmentId, updates }: { appointmentId: number; updates: UpdateAppointmentData }) => {
       const response = await api.patch(`/clinical-history/${appointmentId}`, updates);
       return response.data;
     },
@@ -472,7 +470,7 @@ export const PatientDetail = () => {
 
   // ====== ALLERGY MUTATIONS ======
   const createAllergyMutation = useMutation({
-    mutationFn: async (allergyData: any) => {
+    mutationFn: async (allergyData: CreateAllergyData) => {
       // Validate required fields
       if (!allergyData.allergyName || !allergyData.severity || !allergyData.type || !allergyData.reaction) {
         throw new Error(t('patientDetail.allFieldsRequired'));
@@ -485,13 +483,14 @@ export const PatientDetail = () => {
       setShowAddAllergy(false);
       setAllergyForm({});
     },
-    onError: (error: any) => {
-      alert(error.response?.data?.message || error.message || t('patientDetail.saveError'));
+    onError: (error: unknown) => {
+      const apiError = error as ApiError;
+      alert(apiError.response?.data?.message || apiError.message || t('patientDetail.saveError'));
     },
   });
 
   const updateAllergyMutation = useMutation({
-    mutationFn: async ({ allergyId, updates }: { allergyId: number; updates: any }) => {
+    mutationFn: async ({ allergyId, updates }: { allergyId: number; updates: UpdateAllergyData }) => {
       // Validate required fields
       if (!updates.allergyName || !updates.severity || !updates.type || !updates.reaction) {
         throw new Error(t('patientDetail.allFieldsRequired'));
@@ -504,8 +503,9 @@ export const PatientDetail = () => {
       setEditingAllergyId(null);
       setAllergyForm({});
     },
-    onError: (error: any) => {
-      alert(error.response?.data?.message || error.message || t('patientDetail.saveError'));
+    onError: (error: unknown) => {
+      const apiError = error as ApiError;
+      alert(apiError.response?.data?.message || apiError.message || t('patientDetail.saveError'));
     },
   });
 
@@ -517,14 +517,15 @@ export const PatientDetail = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient', id] });
     },
-    onError: (error: any) => {
-      alert(error.response?.data?.message || error.message || t('patientDetail.deleteError'));
+    onError: (error: unknown) => {
+      const apiError = error as ApiError;
+      alert(apiError.response?.data?.message || apiError.message || t('patientDetail.deleteError'));
     },
   });
 
   // ====== VITAL MUTATIONS ======
   const createVitalMutation = useMutation({
-    mutationFn: async (vitalData: any) => {
+    mutationFn: async (vitalData: CreateVitalData) => {
       const response = await api.post(`/patients/${patient?.idPatient}/vitals`, vitalData);
       return response.data;
     },
@@ -535,9 +536,10 @@ export const PatientDetail = () => {
       setVitalForm({});
       alert(t('patientDetail.vitalSavedSuccess'));
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Error creating vital:', error);
-      alert(error.response?.data?.message || error.message || t('patientDetail.saveError'));
+      const apiError = error as ApiError;
+      alert(apiError.response?.data?.message || apiError.message || t('patientDetail.saveError'));
     },
   });
 
@@ -555,12 +557,16 @@ export const PatientDetail = () => {
 
   // Function to confirm and save vital data
   const confirmVitalSave = () => {
-    createVitalMutation.mutate(vitalForm);
+    if (!vitalForm.date) {
+      alert(t('patientDetail.dateRequired'));
+      return;
+    }
+    createVitalMutation.mutate(vitalForm as CreateVitalData);
   };
 
   // ====== VACCINE MUTATIONS ======
   const createVaccineMutation = useMutation({
-    mutationFn: async (vaccineData: any) => {
+    mutationFn: async (vaccineData: CreateVaccineData) => {
       const response = await api.post(`/patients/${patient?.idPatient}/vaccines`, vaccineData);
       return response.data;
     },
@@ -572,7 +578,7 @@ export const PatientDetail = () => {
   });
 
   const updateVaccineMutation = useMutation({
-    mutationFn: async ({ vaccineId, updates }: { vaccineId: number; updates: any }) => {
+    mutationFn: async ({ vaccineId, updates }: { vaccineId: number; updates: UpdateVaccineData }) => {
       const response = await api.patch(`/patients/${patient?.idPatient}/vaccines/${vaccineId}`, updates);
       return response.data;
     },
@@ -595,7 +601,7 @@ export const PatientDetail = () => {
 
   // ====== LAB RESULTS MUTATIONS ======
   const createLabMutation = useMutation({
-    mutationFn: async (labData: any) => {
+    mutationFn: async (labData: CreateLabData) => {
       const response = await api.post(`/medics/patients/${patient?.idPatient}/labs`, labData);
       return response.data;
     },
@@ -605,24 +611,25 @@ export const PatientDetail = () => {
       setLabForm({});
       alert(t('patientDetail.vitalSavedSuccess'));
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       console.error('Error creating lab result:', err);
-      alert(t('medic.patientDetail.saveError') + ': ' + (err.response?.data?.message || err.message));
+      const apiError = err as ApiError;
+      alert(t('medic.patientDetail.saveError') + ': ' + (apiError.response?.data?.message || apiError.message));
     },
   });
 
   // Fetch available lab tests
-  const { data: labTests } = useQuery({
+  const { data: labTests } = useQuery<LabTest[]>({
     queryKey: ['lab-tests'],
     queryFn: async () => {
-      const response = await api.get('/medics/lab-tests');
+      const response = await api.get<LabTest[]>('/medics/lab-tests');
       return response.data;
     },
   });
 
   // ====== CONTACT MUTATIONS ======
   const createContactMutation = useMutation({
-    mutationFn: async (contactData: any) => {
+    mutationFn: async (contactData: CreateContactData) => {
       const response = await api.post(`/patients/${patient?.idPatient}/contacts`, contactData);
       return response.data;
     },
@@ -634,7 +641,7 @@ export const PatientDetail = () => {
   });
 
   const updateContactMutation = useMutation({
-    mutationFn: async ({ contactId, updates }: { contactId: number; updates: any }) => {
+    mutationFn: async ({ contactId, updates }: { contactId: number; updates: UpdateContactData }) => {
       const response = await api.patch(`/patients/${patient?.idPatient}/contacts/${contactId}`, updates);
       return response.data;
     },
@@ -1274,7 +1281,7 @@ export const PatientDetail = () => {
                       >
                         <option value="">{isLoadingInsurances ? t('patientDetail.loading') : t('patientDetail.select')}</option>
                         {insurancesList && insurancesList.length > 0 ? (
-                          insurancesList.map((ins: { idInsurance: number; name: string }) => (
+                          insurancesList.map((ins: InsuranceListItem) => (
                             <option key={ins.idInsurance} value={ins.idInsurance}>
                               {ins.name}
                             </option>
@@ -1429,7 +1436,7 @@ export const PatientDetail = () => {
                       alert(t('patientDetail.allFieldsRequired'));
                       return;
                     }
-                    createAllergyMutation.mutate(allergyForm);
+                    createAllergyMutation.mutate(allergyForm as CreateAllergyData);
                   }}
                   disabled={createAllergyMutation.isPending}
                 >
@@ -1977,7 +1984,18 @@ export const PatientDetail = () => {
               </div>
               <div className="form-actions">
                 <button className="btn-cancel" onClick={() => { setShowAddVaccine(false); setVaccineForm({}); }}>{t('patientDetail.cancel')}</button>
-                <button className="btn-save" onClick={() => createVaccineMutation.mutate(vaccineForm)}>{t('patientDetail.save')}</button>
+                <button 
+                  className="btn-save" 
+                  onClick={() => {
+                    if (!vaccineForm.vaccineName || !vaccineForm.date) {
+                      alert(t('patientDetail.allFieldsRequired'));
+                      return;
+                    }
+                    createVaccineMutation.mutate(vaccineForm as CreateVaccineData);
+                  }}
+                >
+                  {t('patientDetail.save')}
+                </button>
               </div>
             </div>
           )}
@@ -2190,7 +2208,18 @@ export const PatientDetail = () => {
               </div>
               <div className="form-actions">
                 <button className="btn-cancel" onClick={() => { setShowAddContact(false); setContactForm({}); }}>{t('patientDetail.cancel')}</button>
-                <button className="btn-save" onClick={() => createContactMutation.mutate(contactForm)}>{t('patientDetail.save')}</button>
+                <button 
+                  className="btn-save" 
+                  onClick={() => {
+                    if (!contactForm.name) {
+                      alert(t('patientDetail.allFieldsRequired'));
+                      return;
+                    }
+                    createContactMutation.mutate(contactForm as CreateContactData);
+                  }}
+                >
+                  {t('patientDetail.save')}
+                </button>
               </div>
             </div>
           )}
@@ -2568,7 +2597,7 @@ export const PatientDetail = () => {
                             formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
                           }
                         }, 100);
-                      } catch (error) {
+                      } catch {
                         alert(t('patientDetail.saveError'));
                       }
                     }}
@@ -2609,7 +2638,7 @@ export const PatientDetail = () => {
                     value={labForm.idContent || ''}
                     onChange={(e) => {
                       try {
-                        const selectedTest = labTests?.find((test: any) => test.idContent === parseInt(e.target.value));
+                        const selectedTest = labTests?.find((test: LabTest) => test.idContent === parseInt(e.target.value));
                         setLabForm({
                           ...labForm,
                           idContent: selectedTest ? parseInt(e.target.value) : undefined,
@@ -2623,7 +2652,7 @@ export const PatientDetail = () => {
                   >
                     <option value="">{t('patientDetail.select')}</option>
                     {labTests && Array.isArray(labTests) && labTests.length > 0 ? (
-                      labTests.map((test: any) => (
+                      labTests.map((test: LabTest) => (
                         <option key={test.idContent} value={test.idContent}>
                           {test.name}
                         </option>
@@ -2849,7 +2878,16 @@ export const PatientDetail = () => {
                 <button className="btn-cancel" onClick={() => { setShowAddVaccine(false); setVaccineForm({}); }}>
                   {t('patientDetail.cancel')}
                 </button>
-                <button className="btn-save" onClick={() => createVaccineMutation.mutate(vaccineForm)}>
+                <button 
+                  className="btn-save" 
+                  onClick={() => {
+                    if (!vaccineForm.vaccineName || !vaccineForm.date) {
+                      alert(t('patientDetail.allFieldsRequired'));
+                      return;
+                    }
+                    createVaccineMutation.mutate(vaccineForm as CreateVaccineData);
+                  }}
+                >
                   {t('patientDetail.save')}
                 </button>
               </div>

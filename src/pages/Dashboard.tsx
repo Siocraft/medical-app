@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { patientService } from '../services/patientService';
 import { Header } from '../components/Header';
 import { DoctorSection } from '../components/DoctorSection';
-import type { PatientData, Allergy, Vital, Lab, Vaccine, PathologicalRecord, Contact, PatientFile } from '../types';
+import type { PatientData, Allergy, Vital, Lab, Vaccine, PathologicalRecord, Contact, PatientFile, ClinicalHistory, ApiError } from '../types';
 import {
   Mail,
   Phone,
@@ -45,8 +45,14 @@ export const Dashboard: React.FC = () => {
       const data = await patientService.getMyPatientData();
       console.log('[TEMPORARY] Received patient data:', data);
       setPatientData(data);
-    } catch (err: any) {
-      console.error('[TEMPORARY] Error fetching patient data:', err);
+    } catch (err) {
+      const apiError = err as ApiError;
+      console.error('[TEMPORARY] Error fetching patient data:', apiError);
+      if (apiError.response?.data?.message) {
+        console.error('Error message:', apiError.response.data.message);
+      } else if (apiError.message) {
+        console.error('Error message:', apiError.message);
+      }
       setPatientData(null);
     } finally {
       setLoading(false);
@@ -221,7 +227,7 @@ export const Dashboard: React.FC = () => {
 
         {appointments.length > 0 ? (
           <div className="appointments-list">
-            {appointments.map((appointment: any) => (
+            {appointments.map((appointment: ClinicalHistory) => (
               <div key={appointment.idHistory} className="appointment-card">
                 <div className="appointment-header">
                   <div className="appointment-date">
