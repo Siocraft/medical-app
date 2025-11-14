@@ -71,7 +71,8 @@ export interface ClinicalHistory {
 }
 
 export interface Allergy {
-  idPatientAllergy: number;
+  idPatientAllergy?: number;
+  idElement?: number;
   idPatient: number;
   idAllergy?: number;
   allergyName?: string;
@@ -106,10 +107,10 @@ export interface Lab {
   testName?: string;
   result?: string;
   value?: number;
-  unit?: string;
-  referenceRange?: string;
+  unit?: string | null;
+  referenceRange?: string | null;
   notes?: string;
-  comment?: string;
+  comment?: string | null;
   idUser?: number;
 }
 

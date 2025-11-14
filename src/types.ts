@@ -54,6 +54,18 @@ export interface Doctor {
   whatsapp?: string;
 }
 
+export interface ClinicalHistoryBackground {
+  idBackground: number;
+  family?: string;
+  personal?: string;
+  nonPathological?: string;
+  gynecological?: string;
+  perinatal?: string;
+  date: string;
+  idUser: number;
+  idPatient: number;
+}
+
 export interface PatientData {
   patient: any;
   history?: any[];
@@ -71,17 +83,22 @@ export interface PatientData {
   education?: { name: string };
   documentType?: { name: string };
   clinicalHistories?: any[];
+  clinicalHistoryBackground?: ClinicalHistoryBackground | null;
   files?: PatientFile[];
   doctors?: Doctor[];
 }
 
 export interface Allergy {
-  idPatientAllergy: number;
+  idPatientAllergy?: number;
+  idElement?: number;
+  idPatient?: number;
+  idAllergy?: number;
   allergyName?: string;
   name?: string;
   severity?: string;
   reaction?: string;
   type?: string;
+  date?: string;
 }
 
 export interface Vital {
@@ -104,6 +121,8 @@ export interface Lab {
   idUser: number;
   idPatient: number;
   testName?: string | null; // Added by backend from JOIN
+  unit?: string;
+  referenceRange?: string;
 }
 
 export interface Vaccine {
