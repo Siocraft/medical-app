@@ -209,7 +209,7 @@ export const Dashboard: React.FC = () => {
               {insurance.provider && (
                 <div className="info-row">
                   <span className="info-row-label">{t('patientDetail.provider')}</span>
-                  <span className="info-row-value">{insurance.provider}</span>
+                  <span className="info-row-value">{insurance.provider} test</span>
                 </div>
               )}
             </div>

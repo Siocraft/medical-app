@@ -20,11 +20,14 @@ import {
   Phone,
   MapPin,
   Droplet,
-  Weight,
-  Ruler,
   UserPlus,
   Link,
-  Trash2
+  Trash2,
+  Home,
+  Briefcase,
+  GraduationCap,
+  Shield,
+  FileText
 } from 'lucide-react';
 import './MedicDashboard.css';
 
@@ -85,6 +88,20 @@ export const MedicDashboard = () => {
       bloodRh: '' | '+' | '-';
       weight: string;
       height: string;
+      biologicalSex: '' | 'M' | 'F' | 'O';
+      birthDate: string;
+      birthPlace: string;
+      residencePlace: string;
+      streetAddress: string;
+      neighborhood: string;
+      occupation: string;
+      education: string;
+      extraPhone: string;
+      hasInsurance: boolean;
+      insuranceCompany: string;
+      referredBy: string;
+      recordNumber: string;
+      recordNumberManual: boolean;
     }) => {
       // Step 1: Create user account
       const userResponse = await api.post('/auth/register', {
@@ -98,23 +115,35 @@ export const MedicDashboard = () => {
       const newUserId = userResponse.data.user.idUser;
 
       // Step 2: Create patient record
+      // Map education string to number (0 = none, 1 = elementary, 2 = middle, 3 = high, 4 = university, 5 = postgraduate)
+      const educationMap: Record<string, number> = {
+        'none': 0,
+        'elementary': 1,
+        'middle': 2,
+        'high': 3,
+        'university': 4,
+        'postgraduate': 5
+      };
+
       const patientPayload = {
         idUser: newUserId,
         email: patientData.email,
         phone: patientData.phone || '0000000000',
-        extraPhone: '',
-        address: patientData.address || 'No especificada',
-        addressSpecific: '',
+        extraPhone: patientData.extraPhone || '',
+        address: patientData.streetAddress || patientData.address || 'No especificada',
+        addressSpecific: patientData.neighborhood || '',
         bloodGroup: patientData.bloodGroup || '',
         bloodRh: patientData.bloodRh || '',
         weight: patientData.weight ? parseFloat(patientData.weight) : undefined,
         height: patientData.height ? parseInt(patientData.height) : undefined,
+        education: patientData.education ? educationMap[patientData.education] : 0,
         civilStatus: '',
-        policy: '',
-        origin: '',
+        policy: patientData.hasInsurance ? (patientData.insuranceCompany || '') : '',
+        origin: patientData.referredBy || '',
         originSent: '',
-        originPlace: '',
-        insuranceComment: ''
+        originPlace: patientData.birthPlace || '',
+        insuranceComment: patientData.hasInsurance ? patientData.insuranceCompany : '',
+        recordNumber: patientData.recordNumberManual && patientData.recordNumber ? patientData.recordNumber : undefined,
       };
 
       const patientResponse = await api.post('/patients', patientPayload);
@@ -144,7 +173,21 @@ export const MedicDashboard = () => {
       bloodGroup: '' as '' | 'A' | 'B' | 'AB' | 'O',
       bloodRh: '' as '' | '+' | '-',
       weight: '',
-      height: ''
+      height: '',
+      biologicalSex: '' as '' | 'M' | 'F' | 'O',
+      birthDate: '',
+      birthPlace: '',
+      residencePlace: '',
+      streetAddress: '',
+      neighborhood: '',
+      occupation: '',
+      education: '',
+      extraPhone: '',
+      hasInsurance: false,
+      insuranceCompany: '',
+      referredBy: '',
+      recordNumber: '',
+      recordNumberManual: false
     },
     validate: (values) => {
       const errors: any = {};
@@ -583,24 +626,244 @@ export const MedicDashboard = () => {
                     />
                   </div>
 
-                  <div className="form-group form-group-full">
-                    <label htmlFor="address">
-                      <MapPin size={16} />
-                      {t('medic.createPatient.address')}
+                  <div className="form-group">
+                    <label htmlFor="extraPhone">
+                      <Phone size={16} />
+                      {t('medic.createPatient.extraPhone')}
                     </label>
                     <input
-                      type="text"
-                      id="address"
-                      name="address"
-                      value={formik.values.address}
+                      type="tel"
+                      id="extraPhone"
+                      name="extraPhone"
+                      value={formik.values.extraPhone}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
-                      placeholder={t('medic.createPatient.addressPlaceholder')}
+                      placeholder={t('medic.createPatient.extraPhonePlaceholder')}
                     />
                   </div>
 
-                  {/* Physical Information */}
+                  {/* Personal Information */}
                   <div className="form-group">
+                    <label htmlFor="biologicalSex">
+                      <User size={16} />
+                      {t('medic.createPatient.biologicalSex')}
+                    </label>
+                    <select
+                      id="biologicalSex"
+                      name="biologicalSex"
+                      value={formik.values.biologicalSex}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                    >
+                      <option value="">{t('medic.createPatient.selectBiologicalSex')}</option>
+                      <option value="M">{t('medic.createPatient.male')}</option>
+                      <option value="F">{t('medic.createPatient.female')}</option>
+                      <option value="O">{t('medic.createPatient.other')}</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="birthDate">
+                      <Calendar size={16} />
+                      {t('medic.createPatient.birthDate')}
+                    </label>
+                    <input
+                      type="date"
+                      id="birthDate"
+                      name="birthDate"
+                      value={formik.values.birthDate}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="birthPlace">
+                      <MapPin size={16} />
+                      {t('medic.createPatient.birthPlace')}
+                    </label>
+                    <input
+                      type="text"
+                      id="birthPlace"
+                      name="birthPlace"
+                      value={formik.values.birthPlace}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder={t('medic.createPatient.birthPlacePlaceholder')}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="residencePlace">
+                      <Home size={16} />
+                      {t('medic.createPatient.residencePlace')}
+                    </label>
+                    <input
+                      type="text"
+                      id="residencePlace"
+                      name="residencePlace"
+                      value={formik.values.residencePlace}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder={t('medic.createPatient.residencePlacePlaceholder')}
+                    />
+                  </div>
+
+                  {/* Address Information */}
+                  <div className="form-group form-group-full">
+                    <label htmlFor="streetAddress">
+                      <MapPin size={16} />
+                      {t('medic.createPatient.streetAddress')}
+                    </label>
+                    <input
+                      type="text"
+                      id="streetAddress"
+                      name="streetAddress"
+                      value={formik.values.streetAddress}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder={t('medic.createPatient.streetAddressPlaceholder')}
+                    />
+                  </div>
+
+                  <div className="form-group form-group-full">
+                    <label htmlFor="neighborhood">
+                      <MapPin size={16} />
+                      {t('medic.createPatient.neighborhood')}
+                    </label>
+                    <input
+                      type="text"
+                      id="neighborhood"
+                      name="neighborhood"
+                      value={formik.values.neighborhood}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder={t('medic.createPatient.neighborhoodPlaceholder')}
+                    />
+                  </div>
+
+                  {/* Professional Information */}
+                  <div className="form-group">
+                    <label htmlFor="occupation">
+                      <Briefcase size={16} />
+                      {t('medic.createPatient.occupation')}
+                    </label>
+                    <input
+                      type="text"
+                      id="occupation"
+                      name="occupation"
+                      value={formik.values.occupation}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder={t('medic.createPatient.occupationPlaceholder')}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="education">
+                      <GraduationCap size={16} />
+                      {t('medic.createPatient.education')}
+                    </label>
+                    <select
+                      id="education"
+                      name="education"
+                      value={formik.values.education}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                    >
+                      <option value="">{t('medic.createPatient.selectEducation')}</option>
+                      <option value="none">{t('medic.createPatient.none')}</option>
+                      <option value="elementary">{t('medic.createPatient.elementary')}</option>
+                      <option value="middle">{t('medic.createPatient.middle')}</option>
+                      <option value="high">{t('medic.createPatient.high')}</option>
+                      <option value="university">{t('medic.createPatient.university')}</option>
+                      <option value="postgraduate">{t('medic.createPatient.postgraduate')}</option>
+                    </select>
+                  </div>
+
+                  {/* Insurance Information */}
+                  <div className="form-group form-group-full">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        id="hasInsurance"
+                        name="hasInsurance"
+                        checked={formik.values.hasInsurance}
+                        onChange={formik.handleChange}
+                        style={{ width: 'auto', cursor: 'pointer' }}
+                      />
+                      <Shield size={16} />
+                      {t('medic.createPatient.hasInsurance')}
+                    </label>
+                  </div>
+
+                  {formik.values.hasInsurance && (
+                    <div className="form-group form-group-full">
+                      <label htmlFor="insuranceCompany">
+                        <Shield size={16} />
+                        {t('medic.createPatient.insuranceCompany')}
+                      </label>
+                      <input
+                        type="text"
+                        id="insuranceCompany"
+                        name="insuranceCompany"
+                        value={formik.values.insuranceCompany}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        placeholder={t('medic.createPatient.insuranceCompanyPlaceholder')}
+                      />
+                    </div>
+                  )}
+
+                  {/* Referral Information */}
+                  <div className="form-group form-group-full">
+                    <label htmlFor="referredBy">
+                      <User size={16} />
+                      {t('medic.createPatient.referredBy')}
+                    </label>
+                    <input
+                      type="text"
+                      id="referredBy"
+                      name="referredBy"
+                      value={formik.values.referredBy}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder={t('medic.createPatient.referredByPlaceholder')}
+                    />
+                  </div>
+
+                  {/* Record Number */}
+                  <div className="form-group form-group-full">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: '0.5rem' }}>
+                      <input
+                        type="checkbox"
+                        id="recordNumberManual"
+                        name="recordNumberManual"
+                        checked={formik.values.recordNumberManual}
+                        onChange={formik.handleChange}
+                        style={{ width: 'auto', cursor: 'pointer' }}
+                      />
+                      <FileText size={16} />
+                      {formik.values.recordNumberManual 
+                        ? t('medic.createPatient.recordNumberManual')
+                        : t('medic.createPatient.recordNumberAuto')}
+                    </label>
+                    {formik.values.recordNumberManual && (
+                      <input
+                        type="text"
+                        id="recordNumber"
+                        name="recordNumber"
+                        value={formik.values.recordNumber}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        placeholder={t('medic.createPatient.recordNumberPlaceholder')}
+                        style={{ marginTop: '0.5rem' }}
+                      />
+                    )}
+                  </div>
+
+                  {/* Physical Information */}
+                  {/* <div className="form-group">
                     <label htmlFor="weight">
                       <Weight size={16} />
                       {t('medic.createPatient.weight')}
@@ -631,7 +894,7 @@ export const MedicDashboard = () => {
                       onBlur={formik.handleBlur}
                       placeholder={t('medic.createPatient.heightPlaceholder')}
                     />
-                  </div>
+                  </div> */}
 
                   {/* Blood Type */}
                   <div className="form-group">
