@@ -40,7 +40,6 @@ import type {
   Vital,
   Lab,
   Vaccine,
-  PathologicalRecord,
   Contact,
   PatientFile
 } from '../types';
@@ -81,6 +80,14 @@ interface Appointment {
   closed: boolean;
 }
 
+interface SubsequentNoteData {
+  date?: string;
+  motive?: string;
+  diagnosis?: string;
+  treatment?: string;
+  notes?: string;
+}
+
 // API functions
 const fetchPatientDetails = async (patientId: string): Promise<PatientData> => {
   const response = await api.get(`/medics/patients/${patientId}`);
@@ -104,7 +111,7 @@ export const PatientDetail = () => {
     notes: ''
   });
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
-  const [editedAppointment, setEditedAppointment] = useState<Partial<Appointment>>({});
+  const [editedAppointment, setEditedAppointment] = useState<Partial<Appointment & { diagnosis?: string; treatment?: string }>>({});
   const [viewingAppointment, setViewingAppointment] = useState<Appointment | null>(null);
 
   // Allergy state
@@ -113,12 +120,10 @@ export const PatientDetail = () => {
   const [allergyForm, setAllergyForm] = useState<Partial<Allergy>>({});
 
   // Vital state
-  const [editingVitalId, setEditingVitalId] = useState<number | null>(null);
   const [showAddVital, setShowAddVital] = useState(false);
   const [vitalForm, setVitalForm] = useState<Partial<Vital>>({});
+  const [showVitalConfirmation, setShowVitalConfirmation] = useState(false);
 
-  // Lab state
-  const [visibleLabsCount, setVisibleLabsCount] = useState(5);
 
   // Files state
   const [visibleFilesCount, setVisibleFilesCount] = useState(5);
@@ -129,16 +134,22 @@ export const PatientDetail = () => {
   // Lab modal state
   const [selectedLab, setSelectedLab] = useState<Lab | null>(null);
   const [showLabModal, setShowLabModal] = useState(false);
+  const [showAddLab, setShowAddLab] = useState(false);
+  const [labForm, setLabForm] = useState<{
+    idContent?: number;
+    testName?: string;
+    value?: number;
+    unit?: string;
+    referenceRange?: string;
+    comment?: string;
+    date?: string;
+  }>({});
 
   // Vaccine state
   const [editingVaccineId, setEditingVaccineId] = useState<number | null>(null);
   const [showAddVaccine, setShowAddVaccine] = useState(false);
   const [vaccineForm, setVaccineForm] = useState<Partial<Vaccine>>({});
 
-  // Pathological Record state
-  const [editingRecordId, setEditingRecordId] = useState<number | null>(null);
-  const [showAddRecord, setShowAddRecord] = useState(false);
-  const [recordForm, setRecordForm] = useState<Partial<PathologicalRecord>>({});
 
   // Contact state
   const [editingContactId, setEditingContactId] = useState<number | null>(null);
@@ -149,13 +160,25 @@ export const PatientDetail = () => {
   const [showUploadFile, setShowUploadFile] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileComment, setFileComment] = useState('');
+  // Subsequent note (nota subsecuente) state
+  const [subsequentNoteForm, setSubsequentNoteForm] = useState({
+    date: '',
+    motive: '',
+    diagnosis: '',
+    treatment: '',
+    notes: ''
+  });
 
   // Lifestyle & Insurance state (single edit mode since they're unique objects)
-  // TODO: Implement lifestyle and insurance editing functionality
+  // TODO: Implement lifestyle editing functionality
   // const [editingLifestyle, setEditingLifestyle] = useState(false);
   // const [lifestyleForm, setLifestyleForm] = useState<any>({});
-  // const [editingInsurance, setEditingInsurance] = useState(false);
-  // const [insuranceForm, setInsuranceForm] = useState<any>({});
+  const [editingInsurance, setEditingInsurance] = useState(false);
+  const [insuranceForm, setInsuranceForm] = useState<{
+    idInsurance?: number | null;
+    policy?: string;
+    insuranceComment?: string;
+  }>({});
 
   // Accordion state for collapsible sections
   const [expandedSections, setExpandedSections] = useState({
@@ -187,13 +210,22 @@ export const PatientDetail = () => {
     enabled: !!id,
   });
 
+  // Fetch insurance list
+  const { data: insurancesList, isLoading: isLoadingInsurances, error: insurancesError } = useQuery({
+    queryKey: ['insurances'],
+    queryFn: async () => {
+      const response = await api.get('/patients/insurances/list');
+      return response.data;
+    },
+  });
+
+
   const patient = data?.patient;
   const appointments = data?.history || [];
   const allergies = data?.allergies || [];
   const vitals = data?.vitals || [];
   const labs = data?.labs || [];
   const vaccines = data?.vaccines || [];
-  const pathologicalRecords = data?.pathologicalRecords || [];
   const contacts = data?.contacts || [];
   const lifestyle = data?.lifestyle;
   const insurance = data?.insurance;
@@ -202,6 +234,7 @@ export const PatientDetail = () => {
   const nationality = data?.nationality;
   const education = data?.education;
   const files = data?.files || [];
+  const clinicalHistoryBackground = data?.clinicalHistoryBackground;
 
   useEffect(() => {
     if (patient) {
@@ -271,6 +304,21 @@ export const PatientDetail = () => {
         treatment: '',
         notes: ''
       });
+      // Close any open forms
+      setShowAddLab(false);
+      setShowUploadFile(false);
+      setShowAddVaccine(false);
+      setLabForm({});
+      setSelectedFile(null);
+      setFileComment('');
+      setSubsequentNoteForm({
+        date: '',
+        motive: '',
+        diagnosis: '',
+        treatment: '',
+        notes: ''
+      });
+      setVaccineForm({});
     },
     onError: (err) => {
       console.error('Error creating appointment:', err);
@@ -283,8 +331,9 @@ export const PatientDetail = () => {
       idPatient: patient?.idPatient,
       date: newAppointment.date,
       motive: newAppointment.motive,
+      diagnosis: newAppointment.diagnosis,
+      treatment: newAppointment.treatment,
       notes: newAppointment.notes,
-      // For now, we'll ignore diagnosis and treatment since they need special handling
     });
   };
 
@@ -297,6 +346,21 @@ export const PatientDetail = () => {
       treatment: '',
       notes: ''
     });
+    // Close any open forms
+    setShowAddLab(false);
+    setShowUploadFile(false);
+    setShowAddVaccine(false);
+    setLabForm({});
+    setSelectedFile(null);
+    setFileComment('');
+    setSubsequentNoteForm({
+      date: '',
+      motive: '',
+      diagnosis: '',
+      treatment: '',
+      notes: ''
+    });
+    setVaccineForm({});
   };
 
   const handleEditAppointment = (appointment: Appointment) => {
@@ -304,6 +368,8 @@ export const PatientDetail = () => {
     setEditedAppointment({
       date: appointment.date,
       motive: appointment.motive,
+      diagnosis: appointment.diagnosisIds || '',
+      treatment: appointment.medications || '',
       notes: appointment.notes
     });
   };
@@ -318,6 +384,21 @@ export const PatientDetail = () => {
       queryClient.invalidateQueries({ queryKey: ['patient', id] });
       setEditingAppointmentId(null);
       setEditedAppointment({});
+      // Close any open forms
+      setShowAddLab(false);
+      setShowUploadFile(false);
+      setShowAddVaccine(false);
+      setLabForm({});
+      setSelectedFile(null);
+      setFileComment('');
+      setSubsequentNoteForm({
+        date: '',
+        motive: '',
+        diagnosis: '',
+        treatment: '',
+        notes: ''
+      });
+      setVaccineForm({});
     },
     onError: (err) => {
       console.error('Error updating appointment:', err);
@@ -332,6 +413,8 @@ export const PatientDetail = () => {
         updates: {
           date: editedAppointment.date,
           motive: editedAppointment.motive,
+          diagnosis: editedAppointment.diagnosis,
+          treatment: editedAppointment.treatment,
           notes: editedAppointment.notes,
         },
       });
@@ -341,6 +424,21 @@ export const PatientDetail = () => {
   const handleCancelEditAppointment = () => {
     setEditingAppointmentId(null);
     setEditedAppointment({});
+    // Close any open forms
+    setShowAddLab(false);
+    setShowUploadFile(false);
+    setShowAddVaccine(false);
+    setLabForm({});
+    setSelectedFile(null);
+    setFileComment('');
+    setSubsequentNoteForm({
+      date: '',
+      motive: '',
+      diagnosis: '',
+      treatment: '',
+      notes: ''
+    });
+    setVaccineForm({});
   };
 
   // Mutation for deleting appointment
@@ -375,7 +473,11 @@ export const PatientDetail = () => {
   // ====== ALLERGY MUTATIONS ======
   const createAllergyMutation = useMutation({
     mutationFn: async (allergyData: any) => {
-      const response = await api.post(`/patients/${patient?.idPatient}/allergies`, allergyData);
+      // Validate required fields
+      if (!allergyData.allergyName || !allergyData.severity || !allergyData.type || !allergyData.reaction) {
+        throw new Error(t('patientDetail.allFieldsRequired'));
+      }
+      const response = await api.post(`/medics/patients/${patient?.idPatient}/allergies`, allergyData);
       return response.data;
     },
     onSuccess: () => {
@@ -383,11 +485,18 @@ export const PatientDetail = () => {
       setShowAddAllergy(false);
       setAllergyForm({});
     },
+    onError: (error: any) => {
+      alert(error.response?.data?.message || error.message || t('patientDetail.saveError'));
+    },
   });
 
   const updateAllergyMutation = useMutation({
     mutationFn: async ({ allergyId, updates }: { allergyId: number; updates: any }) => {
-      const response = await api.patch(`/patients/${patient?.idPatient}/allergies/${allergyId}`, updates);
+      // Validate required fields
+      if (!updates.allergyName || !updates.severity || !updates.type || !updates.reaction) {
+        throw new Error(t('patientDetail.allFieldsRequired'));
+      }
+      const response = await api.patch(`/medics/patients/${patient?.idPatient}/allergies/${allergyId}`, updates);
       return response.data;
     },
     onSuccess: () => {
@@ -395,15 +504,21 @@ export const PatientDetail = () => {
       setEditingAllergyId(null);
       setAllergyForm({});
     },
+    onError: (error: any) => {
+      alert(error.response?.data?.message || error.message || t('patientDetail.saveError'));
+    },
   });
 
   const deleteAllergyMutation = useMutation({
     mutationFn: async (allergyId: number) => {
-      const response = await api.delete(`/patients/${patient?.idPatient}/allergies/${allergyId}`);
+      const response = await api.delete(`/medics/patients/${patient?.idPatient}/allergies/${allergyId}`);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient', id] });
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.message || error.message || t('patientDetail.deleteError'));
     },
   });
 
@@ -416,31 +531,32 @@ export const PatientDetail = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient', id] });
       setShowAddVital(false);
+      setShowVitalConfirmation(false);
       setVitalForm({});
+      alert(t('patientDetail.vitalSavedSuccess'));
+    },
+    onError: (error: any) => {
+      console.error('Error creating vital:', error);
+      alert(error.response?.data?.message || error.message || t('patientDetail.saveError'));
     },
   });
 
-  const updateVitalMutation = useMutation({
-    mutationFn: async ({ vitalId, updates }: { vitalId: number; updates: any }) => {
-      const response = await api.patch(`/patients/${patient?.idPatient}/vitals/${vitalId}`, updates);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['patient', id] });
-      setEditingVitalId(null);
-      setVitalForm({});
-    },
-  });
+  // Function to validate and confirm vital data before saving
+  const handleVitalSave = () => {
+    // Validate required fields
+    if (!vitalForm.date) {
+      alert(t('patientDetail.dateRequired'));
+      return;
+    }
 
-  const deleteVitalMutation = useMutation({
-    mutationFn: async (vitalId: number) => {
-      const response = await api.delete(`/patients/${patient?.idPatient}/vitals/${vitalId}`);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['patient', id] });
-    },
-  });
+    // Show confirmation dialog with data summary
+    setShowVitalConfirmation(true);
+  };
+
+  // Function to confirm and save vital data
+  const confirmVitalSave = () => {
+    createVitalMutation.mutate(vitalForm);
+  };
 
   // ====== VACCINE MUTATIONS ======
   const createVaccineMutation = useMutation({
@@ -477,38 +593,30 @@ export const PatientDetail = () => {
     },
   });
 
-  // ====== PATHOLOGICAL RECORD MUTATIONS ======
-  const createRecordMutation = useMutation({
-    mutationFn: async (recordData: any) => {
-      const response = await api.post(`/patients/${patient?.idPatient}/pathological-records`, recordData);
+  // ====== LAB RESULTS MUTATIONS ======
+  const createLabMutation = useMutation({
+    mutationFn: async (labData: any) => {
+      const response = await api.post(`/medics/patients/${patient?.idPatient}/labs`, labData);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient', id] });
-      setShowAddRecord(false);
-      setRecordForm({});
+      setShowAddLab(false);
+      setLabForm({});
+      alert(t('patientDetail.vitalSavedSuccess'));
+    },
+    onError: (err: any) => {
+      console.error('Error creating lab result:', err);
+      alert(t('medic.patientDetail.saveError') + ': ' + (err.response?.data?.message || err.message));
     },
   });
 
-  const updateRecordMutation = useMutation({
-    mutationFn: async ({ recordId, updates }: { recordId: number; updates: any }) => {
-      const response = await api.patch(`/patients/${patient?.idPatient}/pathological-records/${recordId}`, updates);
+  // Fetch available lab tests
+  const { data: labTests } = useQuery({
+    queryKey: ['lab-tests'],
+    queryFn: async () => {
+      const response = await api.get('/medics/lab-tests');
       return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['patient', id] });
-      setEditingRecordId(null);
-      setRecordForm({});
-    },
-  });
-
-  const deleteRecordMutation = useMutation({
-    mutationFn: async (recordId: number) => {
-      const response = await api.delete(`/patients/${patient?.idPatient}/pathological-records/${recordId}`);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['patient', id] });
     },
   });
 
@@ -547,9 +655,92 @@ export const PatientDetail = () => {
     },
   });
 
+  // ====== INSURANCE MUTATIONS ======
+  const updateInsuranceMutation = useMutation({
+    mutationFn: async (insuranceData: { idInsurance?: number | null; policy?: string; insuranceComment?: string }) => {
+      const response = await api.patch(`/patients/${patient?.idPatient}`, insuranceData);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patient', id] });
+      setEditingInsurance(false);
+      setInsuranceForm({});
+    },
+    onError: (err) => {
+      console.error('Error updating insurance:', err);
+      alert(t('patientDetail.saveError'));
+    },
+  });
+
+  const deleteInsuranceMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.patch(`/patients/${patient?.idPatient}`, {
+        idInsurance: null,
+        policy: '',
+        insuranceComment: '',
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patient', id] });
+    },
+    onError: (err) => {
+      console.error('Error deleting insurance:', err);
+      alert(t('patientDetail.deleteError'));
+    },
+  });
+
+  // ====== INSURANCE HANDLERS ======
+  const handleEditInsurance = () => {
+    if (patient) {
+      setInsuranceForm({
+        idInsurance: patient.idInsurance || null,
+        policy: patient.policy || '',
+        insuranceComment: patient.insuranceComment || '',
+      });
+      setEditingInsurance(true);
+    }
+  };
+
+  const handleCancelEditInsurance = () => {
+    setEditingInsurance(false);
+    setInsuranceForm({});
+  };
+
+  const handleSaveInsurance = () => {
+    updateInsuranceMutation.mutate(insuranceForm);
+  };
+
+  const handleDeleteInsurance = () => {
+    if (confirm(t('patientDetail.deleteInsuranceConfirm'))) {
+      deleteInsuranceMutation.mutate();
+    }
+  };
+
   // ====== FILE UPLOAD MUTATION ======
   const uploadFileMutation = useMutation({
-    mutationFn: async ({ file, comment }: { file: File; comment: string }) => {
+    mutationFn: async ({ file, comment, subsequentNoteData }: { file: File; comment: string; subsequentNoteData?: SubsequentNoteData }) => {
+      // First, create the clinical history (nota subsecuente) if data is provided
+      let clinicalHistoryId = null;
+      if (subsequentNoteData && (subsequentNoteData.date || subsequentNoteData.motive || subsequentNoteData.diagnosis || subsequentNoteData.treatment || subsequentNoteData.notes)) {
+        try {
+          const historyResponse = await api.post('/clinical-history', {
+            idPatient: patient?.idPatient,
+            date: subsequentNoteData.date || new Date().toISOString(),
+            motive: subsequentNoteData.motive || '',
+            diagnosis: subsequentNoteData.diagnosis || '',
+            treatment: subsequentNoteData.treatment || '',
+            notes: subsequentNoteData.notes || '',
+            isEvolution: true
+          });
+          clinicalHistoryId = historyResponse.data.idHistory;
+        } catch (err) {
+          console.error('Error creating clinical history:', err);
+          // Continue with file upload even if history creation fails
+        }
+      }
+
+      // Then upload the file
       const formData = new FormData();
       formData.append('file', file);
       if (comment) {
@@ -560,13 +751,20 @@ export const PatientDetail = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
-      return response.data;
+      return { ...response.data, clinicalHistoryId };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient', id] });
       setShowUploadFile(false);
       setSelectedFile(null);
       setFileComment('');
+      setSubsequentNoteForm({
+        date: '',
+        motive: '',
+        diagnosis: '',
+        treatment: '',
+        notes: ''
+      });
     },
     onError: (err) => {
       console.error('Error uploading file:', err);
@@ -582,7 +780,11 @@ export const PatientDetail = () => {
 
   const handleUploadFile = () => {
     if (selectedFile) {
-      uploadFileMutation.mutate({ file: selectedFile, comment: fileComment });
+      uploadFileMutation.mutate({ 
+        file: selectedFile, 
+        comment: fileComment,
+        subsequentNoteData: subsequentNoteForm
+      });
     }
   };
 
@@ -666,6 +868,92 @@ export const PatientDetail = () => {
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  const formatDateShort = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString(i18n.language, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  // Lab test categories mapping
+  const labTestCategories: Record<string, string> = {
+    // Biometría Hemática
+    'Hemoglobina': 'biometriaHematica',
+    'Hematocrito': 'biometriaHematica',
+    'Leucocitos': 'biometriaHematica',
+    'Plaquetas': 'biometriaHematica',
+    // Química Sanguínea
+    'Urea': 'quimicaSanguinea',
+    'Creatinina': 'quimicaSanguinea',
+    'Electrolitos': 'quimicaSanguinea',
+    'Sodio': 'quimicaSanguinea',
+    'Potasio': 'quimicaSanguinea',
+    'Cloro': 'quimicaSanguinea',
+    'Ácido Úrico': 'quimicaSanguinea',
+    'Acido Úrico': 'quimicaSanguinea',
+    'Hemoglobina Glucosilada': 'quimicaSanguinea',
+    'Hemoglobina glucosilada': 'quimicaSanguinea',
+    // Función Hepática
+    'AST': 'funcionHepatica',
+    'ALT': 'funcionHepatica',
+    'Fosfatasa Alcalina': 'funcionHepatica',
+    'Fosfatasa alcalina': 'funcionHepatica',
+    'Bilirrubina Total': 'funcionHepatica',
+    'Bilirrubina total': 'funcionHepatica',
+    'Bilirrubina Directa': 'funcionHepatica',
+    'Bilirrubina directa': 'funcionHepatica',
+    'Directa': 'funcionHepatica',
+    'Bilirrubina Indirecta': 'funcionHepatica',
+    'Bilirrubina indirecta': 'funcionHepatica',
+    'Indirecta': 'funcionHepatica',
+    // Lípidos
+    'Colesterol Total': 'lipidos',
+    'Colesterol total': 'lipidos',
+    'LDL': 'lipidos',
+    'HDL': 'lipidos',
+    'Triglicéridos': 'lipidos',
+    'Trigliceridos': 'lipidos',
+    'Lp(a)': 'lipidos',
+    'Lpa': 'lipidos',
+  };
+
+  // Group labs by test name and category
+  const groupLabsByTest = () => {
+    const grouped: Record<string, { category: string; tests: Record<string, Lab[]> }> = {
+      biometriaHematica: { category: 'biometriaHematica', tests: {} },
+      quimicaSanguinea: { category: 'quimicaSanguinea', tests: {} },
+      funcionHepatica: { category: 'funcionHepatica', tests: {} },
+      lipidos: { category: 'lipidos', tests: {} },
+      otros: { category: 'otros', tests: {} },
+    };
+
+    labs.forEach((lab) => {
+      const testName = lab.testName || `Lab Test #${lab.idContent}`;
+      const category = labTestCategories[testName] || 'otros';
+
+      if (!grouped[category].tests[testName]) {
+        grouped[category].tests[testName] = [];
+      }
+      grouped[category].tests[testName].push(lab);
+    });
+
+    // Sort each test's labs by date (newest first)
+    Object.keys(grouped).forEach((category) => {
+      Object.keys(grouped[category].tests).forEach((testName) => {
+        grouped[category].tests[testName].sort((a, b) => {
+          const dateA = new Date(a.date).getTime();
+          const dateB = new Date(b.date).getTime();
+          return dateB - dateA; // Newest first
+        });
+      });
+    });
+
+    return grouped;
   };
 
   const isAppointmentToday = (dateString: string) => {
@@ -947,8 +1235,8 @@ export const PatientDetail = () => {
         </div>
 
         {/* Insurance Info */}
-        {insurance && (
-          <div className="info-section">
+        <div className="info-section">
+          <div className="section-header-wrapper">
             <h3 className="section-title collapsible" onClick={() => toggleSection('insurance')}>
               <span className="section-title-content">
                 <ShieldAlert size={20} />
@@ -956,28 +1244,115 @@ export const PatientDetail = () => {
               </span>
               {expandedSections.insurance ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </h3>
-            {expandedSections.insurance && (
-            <div className="section-content">
-              <div className="info-row">
-                <span className="info-row-label">{t('patientDetail.insuranceName')}</span>
-                <span className="info-row-value">{insurance.name || 'N/A'}</span>
+            {expandedSections.insurance && !editingInsurance && (insurance || patient?.idInsurance) && (
+              <div className="section-button-row">
+                <button className="btn-edit-small" onClick={handleEditInsurance}>
+                  <Edit2 size={16} /> {t('patientDetail.edit')}
+                </button>
               </div>
-              {insurance.type && (
-                <div className="info-row">
-                  <span className="info-row-label">{t('patientDetail.insuranceType')}</span>
-                  <span className="info-row-value">{insurance.type}</span>
-                </div>
-              )}
-              {patient.policy && (
-                <div className="info-row">
-                  <span className="info-row-label">{t('patientDetail.policyNumber')}</span>
-                  <span className="info-row-value">{patient.policy}</span>
-                </div>
-              )}
-            </div>
+            )}
+            {expandedSections.insurance && !editingInsurance && !insurance && !patient?.idInsurance && (
+              <div className="section-button-row">
+                <button className="btn-add-small" onClick={handleEditInsurance}>
+                  <Plus size={16} /> {t('patientDetail.addInsurance')}
+                </button>
+              </div>
             )}
           </div>
-        )}
+          {expandedSections.insurance && (
+            <div className="section-content">
+              {editingInsurance ? (
+                <div className="crud-form">
+                  <h4>{insurance ? t('patientDetail.editInsurance') : t('patientDetail.addInsurance')}</h4>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>{t('patientDetail.insuranceName')} {t('patientDetail.required')}</label>
+                      <select
+                        value={insuranceForm.idInsurance || ''}
+                        onChange={(e) => setInsuranceForm({ ...insuranceForm, idInsurance: e.target.value ? parseInt(e.target.value) : null })}
+                        disabled={isLoadingInsurances}
+                      >
+                        <option value="">{isLoadingInsurances ? t('patientDetail.loading') : t('patientDetail.select')}</option>
+                        {insurancesList && insurancesList.length > 0 ? (
+                          insurancesList.map((ins: { idInsurance: number; name: string }) => (
+                            <option key={ins.idInsurance} value={ins.idInsurance}>
+                              {ins.name}
+                            </option>
+                          ))
+                        ) : (
+                          !isLoadingInsurances && <option value="" disabled>{t('patientDetail.noInsurancesAvailable')}</option>
+                        )}
+                      </select>
+                      {insurancesError && (
+                        <span style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                          {t('patientDetail.errorLoadingInsurances')}
+                        </span>
+                      )}
+                    </div>
+                    <div className="form-group">
+                      <label>{t('patientDetail.policyNumber')}</label>
+                      <input
+                        type="text"
+                        value={insuranceForm.policy || ''}
+                        onChange={(e) => setInsuranceForm({ ...insuranceForm, policy: e.target.value })}
+                        placeholder={t('patientDetail.policyNumber')}
+                      />
+                    </div>
+                    <div className="form-group full-width">
+                      <label>{t('patientDetail.insuranceComment')}</label>
+                      <textarea
+                        value={insuranceForm.insuranceComment || ''}
+                        onChange={(e) => setInsuranceForm({ ...insuranceForm, insuranceComment: e.target.value })}
+                        rows={3}
+                        placeholder={t('patientDetail.insuranceCommentPlaceholder')}
+                      />
+                    </div>
+                  </div>
+                  <div className="form-actions">
+                    {insurance || patient?.idInsurance ? (
+                      <button className="btn-delete" onClick={handleDeleteInsurance} disabled={deleteInsuranceMutation.isPending}>
+                        <Trash2 size={16} /> {deleteInsuranceMutation.isPending ? t('patientDetail.deleting') : t('patientDetail.delete')}
+                      </button>
+                    ) : null}
+                    <button className="btn-cancel" onClick={handleCancelEditInsurance}>
+                      {t('patientDetail.cancel')}
+                    </button>
+                    <button className="btn-save" onClick={handleSaveInsurance} disabled={updateInsuranceMutation.isPending}>
+                      {updateInsuranceMutation.isPending ? t('patientDetail.saving') : t('patientDetail.save')}
+                    </button>
+                  </div>
+                </div>
+              ) : insurance || patient?.idInsurance ? (
+                <>
+                  <div className="info-row">
+                    <span className="info-row-label">{t('patientDetail.insuranceName')}</span>
+                    <span className="info-row-value">{insurance?.name || 'N/A'}</span>
+                  </div>
+                  {insurance?.type && (
+                    <div className="info-row">
+                      <span className="info-row-label">{t('patientDetail.insuranceType')}</span>
+                      <span className="info-row-value">{insurance.type}</span>
+                    </div>
+                  )}
+                  {patient?.policy && (
+                    <div className="info-row">
+                      <span className="info-row-label">{t('patientDetail.policyNumber')}</span>
+                      <span className="info-row-value">{patient.policy}</span>
+                    </div>
+                  )}
+                  {patient?.insuranceComment && (
+                    <div className="info-row">
+                      <span className="info-row-label">{t('patientDetail.insuranceComment')}</span>
+                      <span className="info-row-value">{patient.insuranceComment}</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="no-data">{t('patientDetail.noInsurance')}</p>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Allergies Section */}
         <div className="info-section">
@@ -1008,13 +1383,15 @@ export const PatientDetail = () => {
                   <label>{t('patientDetail.allergyName')} {t('patientDetail.required')}</label>
                   <input
                     type="text"
+                    required
                     value={allergyForm.allergyName || ''}
                     onChange={(e) => setAllergyForm({ ...allergyForm, allergyName: e.target.value })}
                   />
                 </div>
                 <div className="form-group">
-                  <label>{t('patientDetail.severity')}</label>
+                  <label>{t('patientDetail.severityLabel')} {t('patientDetail.required')}</label>
                   <select
+                    required
                     value={allergyForm.severity || ''}
                     onChange={(e) => setAllergyForm({ ...allergyForm, severity: e.target.value })}
                   >
@@ -1025,16 +1402,18 @@ export const PatientDetail = () => {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>{t('patientDetail.type')}</label>
+                  <label>{t('patientDetail.type')} {t('patientDetail.required')}</label>
                   <input
                     type="text"
+                    required
                     value={allergyForm.type || ''}
                     onChange={(e) => setAllergyForm({ ...allergyForm, type: e.target.value })}
                   />
                 </div>
                 <div className="form-group full-width">
-                  <label>{t('patientDetail.reaction')}</label>
+                  <label>{t('patientDetail.reaction')} {t('patientDetail.required')}</label>
                   <textarea
+                    required
                     value={allergyForm.reaction || ''}
                     onChange={(e) => setAllergyForm({ ...allergyForm, reaction: e.target.value })}
                     rows={2}
@@ -1043,7 +1422,19 @@ export const PatientDetail = () => {
               </div>
               <div className="form-actions">
                 <button className="btn-cancel" onClick={() => { setShowAddAllergy(false); setAllergyForm({}); }}>{t('patientDetail.cancel')}</button>
-                <button className="btn-save" onClick={() => createAllergyMutation.mutate(allergyForm)}>{t('patientDetail.save')}</button>
+                <button 
+                  className="btn-save" 
+                  onClick={() => {
+                    if (!allergyForm.allergyName || !allergyForm.severity || !allergyForm.type || !allergyForm.reaction) {
+                      alert(t('patientDetail.allFieldsRequired'));
+                      return;
+                    }
+                    createAllergyMutation.mutate(allergyForm);
+                  }}
+                  disabled={createAllergyMutation.isPending}
+                >
+                  {createAllergyMutation.isPending ? t('patientDetail.saving') : t('patientDetail.save')}
+                </button>
               </div>
             </div>
           )}
@@ -1052,21 +1443,23 @@ export const PatientDetail = () => {
             {allergies.length > 0 ? (
               <div className="allergies-list">
                 {allergies.map((allergy: Allergy) => (
-                  <div key={allergy.idPatientAllergy} className="allergy-item">
-                    {editingAllergyId === allergy.idPatientAllergy ? (
+                  <div key={allergy.idPatientAllergy || allergy.idElement} className="allergy-item">
+                    {editingAllergyId === (allergy.idPatientAllergy || allergy.idElement) ? (
                       <div className="crud-form-inline">
                         <div className="form-grid">
                           <div className="form-group">
-                            <label>{t('patientDetail.allergyName')}</label>
+                            <label>{t('patientDetail.allergyName')} {t('patientDetail.required')}</label>
                             <input
                               type="text"
+                              required
                               value={allergyForm.allergyName || allergy.allergyName || ''}
                               onChange={(e) => setAllergyForm({ ...allergyForm, allergyName: e.target.value })}
                             />
                           </div>
                           <div className="form-group">
-                            <label>{t('patientDetail.severity')}</label>
+                            <label>{t('patientDetail.severityLabel')} {t('patientDetail.required')}</label>
                             <select
+                              required
                               value={allergyForm.severity || allergy.severity || ''}
                               onChange={(e) => setAllergyForm({ ...allergyForm, severity: e.target.value })}
                             >
@@ -1077,16 +1470,18 @@ export const PatientDetail = () => {
                             </select>
                           </div>
                           <div className="form-group">
-                            <label>{t('patientDetail.type')}</label>
+                            <label>{t('patientDetail.type')} {t('patientDetail.required')}</label>
                             <input
                               type="text"
+                              required
                               value={allergyForm.type || allergy.type || ''}
                               onChange={(e) => setAllergyForm({ ...allergyForm, type: e.target.value })}
                             />
                           </div>
                           <div className="form-group full-width">
-                            <label>{t('patientDetail.reaction')}</label>
+                            <label>{t('patientDetail.reaction')} {t('patientDetail.required')}</label>
                             <textarea
+                              required
                               value={allergyForm.reaction || allergy.reaction || ''}
                               onChange={(e) => setAllergyForm({ ...allergyForm, reaction: e.target.value })}
                               rows={2}
@@ -1095,26 +1490,73 @@ export const PatientDetail = () => {
                         </div>
                         <div className="form-actions">
                           <button className="btn-cancel" onClick={() => { setEditingAllergyId(null); setAllergyForm({}); }}>{t('patientDetail.cancel')}</button>
-                          <button className="btn-save" onClick={() => updateAllergyMutation.mutate({ allergyId: allergy.idPatientAllergy, updates: allergyForm })}>{t('patientDetail.save')}</button>
+                          <button 
+                            className="btn-save" 
+                            onClick={() => {
+                              if (!allergyForm.allergyName && !allergy.allergyName || !allergyForm.severity && !allergy.severity || !allergyForm.type && !allergy.type || !allergyForm.reaction && !allergy.reaction) {
+                                alert(t('patientDetail.allFieldsRequired'));
+                                return;
+                              }
+                              const allergyId = allergy.idPatientAllergy || allergy.idElement;
+                              if (!allergyId) {
+                                alert(t('patientDetail.saveError'));
+                                return;
+                              }
+                              updateAllergyMutation.mutate({ 
+                                allergyId, 
+                                updates: {
+                                  allergyName: allergyForm.allergyName || allergy.allergyName,
+                                  severity: allergyForm.severity || allergy.severity,
+                                  type: allergyForm.type || allergy.type,
+                                  reaction: allergyForm.reaction || allergy.reaction,
+                                }
+                              });
+                            }}
+                            disabled={updateAllergyMutation.isPending}
+                          >
+                            {updateAllergyMutation.isPending ? t('patientDetail.saving') : t('patientDetail.save')}
+                          </button>
                         </div>
                       </div>
                     ) : (
-                      <>
+                      <div className="allergy-content">
                         <div className="allergy-header">
-                          <span className="allergy-name">{allergy.allergyName || allergy.name || t('patientDetail.unknown')}</span>
+                          <div className="allergy-title-section">
+                            <AlertTriangle size={16} className="allergy-icon" />
+                            <span className="allergy-name">{allergy.allergyName || allergy.name || t('patientDetail.unknown')}</span>
+                            {allergy.type && <span className="allergy-type-badge">{allergy.type}</span>}
+                            {allergy.severity && (
+                              <span className={`severity-badge ${allergy.severity.toLowerCase()}`}>
+                                {t(`patientDetail.severity.${allergy.severity.toLowerCase()}`) || allergy.severity}
+                              </span>
+                            )}
+                          </div>
                           <div className="item-actions">
-                            <button className="btn-icon-edit" onClick={() => { setEditingAllergyId(allergy.idPatientAllergy); setAllergyForm(allergy); }}>
+                            <button className="btn-icon-edit" onClick={() => { 
+                              const allergyId = allergy.idPatientAllergy || allergy.idElement;
+                              if (allergyId) {
+                                setEditingAllergyId(allergyId);
+                                setAllergyForm(allergy);
+                              }
+                            }}>
                               <Edit2 size={14} />
                             </button>
-                            <button className="btn-icon-delete" onClick={() => confirm(t('patientDetail.deleteAllergy')) && deleteAllergyMutation.mutate(allergy.idPatientAllergy)}>
+                            <button className="btn-icon-delete" onClick={() => {
+                              const allergyId = allergy.idPatientAllergy || allergy.idElement;
+                              if (allergyId && confirm(t('patientDetail.deleteAllergyConfirm') || t('patientDetail.deleteAllergy'))) {
+                                deleteAllergyMutation.mutate(allergyId);
+                              }
+                            }}>
                               <Trash2 size={14} />
                             </button>
                           </div>
                         </div>
-                        {allergy.severity && <span className={`severity-badge ${allergy.severity.toLowerCase()}`}>{allergy.severity}</span>}
-                        {allergy.reaction && <p className="allergy-reaction">{allergy.reaction}</p>}
-                        {allergy.type && <span className="allergy-type">{allergy.type}</span>}
-                      </>
+                        {allergy.reaction && (
+                          <div className="allergy-reaction-compact">
+                            <span className="allergy-reaction-text">{allergy.reaction}</span>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}
@@ -1133,149 +1575,55 @@ export const PatientDetail = () => {
             <h3 className="section-title collapsible" onClick={() => toggleSection('pathological')}>
               <span className="section-title-content">
                 <FileText size={20} />
-                {t('patientDetail.pathologicalRecords')} ({pathologicalRecords.length})
+                {t('patientDetail.pathologicalRecords')}
               </span>
               {expandedSections.pathological ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </h3>
-            {expandedSections.pathological && (
-              <div className="section-button-row">
-                <button className="btn-add-small" onClick={() => setShowAddRecord(true)}>
-                  <Plus size={16} /> {t('patientDetail.addRecord')}
-                </button>
-              </div>
-            )}
           </div>
           {expandedSections.pathological && (
-          <>
-
-          {showAddRecord && (
-            <div className="crud-form">
-              <h4>{t('patientDetail.addPathologicalRecord')}</h4>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>{t('patientDetail.condition')} {t('patientDetail.required')}</label>
-                  <input
-                    type="text"
-                    value={recordForm.condition || ''}
-                    onChange={(e) => setRecordForm({ ...recordForm, condition: e.target.value })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>{t('patientDetail.diagnosisDate')}</label>
-                  <input
-                    type="date"
-                    value={recordForm.diagnosisDate || ''}
-                    onChange={(e) => setRecordForm({ ...recordForm, diagnosisDate: e.target.value })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>{t('patientDetail.status')}</label>
-                  <select
-                    value={recordForm.status || ''}
-                    onChange={(e) => setRecordForm({ ...recordForm, status: e.target.value })}
-                  >
-                    <option value="">{t('patientDetail.selectStatus')}</option>
-                    <option value="Active">{t('patientDetail.active')}</option>
-                    <option value="Resolved">{t('patientDetail.resolved')}</option>
-                    <option value="Chronic">{t('patientDetail.chronic')}</option>
-                  </select>
-                </div>
-                <div className="form-group full-width">
-                  <label>{t('patientDetail.notes')}</label>
-                  <textarea
-                    value={recordForm.notes || ''}
-                    onChange={(e) => setRecordForm({ ...recordForm, notes: e.target.value })}
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <div className="form-actions">
-                <button className="btn-cancel" onClick={() => { setShowAddRecord(false); setRecordForm({}); }}>{t('patientDetail.cancel')}</button>
-                <button className="btn-save" onClick={() => createRecordMutation.mutate(recordForm)}>{t('patientDetail.save')}</button>
-              </div>
-            </div>
-          )}
-
-          <div className="section-content">
-            {pathologicalRecords.length > 0 ? (
-              <div className="records-list">
-                {pathologicalRecords.map((record: PathologicalRecord) => (
-                  <div key={record.idRecord} className="record-item">
-                    {editingRecordId === record.idRecord ? (
-                      <div className="crud-form-inline">
-                        <div className="form-grid">
-                          <div className="form-group">
-                            <label>{t('patientDetail.condition')}</label>
-                            <input
-                              type="text"
-                              value={recordForm.condition || record.condition || ''}
-                              onChange={(e) => setRecordForm({ ...recordForm, condition: e.target.value })}
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>{t('patientDetail.diagnosisDate')}</label>
-                            <input
-                              type="date"
-                              value={recordForm.diagnosisDate || record.diagnosisDate || ''}
-                              onChange={(e) => setRecordForm({ ...recordForm, diagnosisDate: e.target.value })}
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>{t('patientDetail.status')}</label>
-                            <select
-                              value={recordForm.status || record.status || ''}
-                              onChange={(e) => setRecordForm({ ...recordForm, status: e.target.value })}
-                            >
-                              <option value="">{t('patientDetail.selectStatus')}</option>
-                              <option value="Active">{t('patientDetail.active')}</option>
-                              <option value="Resolved">{t('patientDetail.resolved')}</option>
-                              <option value="Chronic">{t('patientDetail.chronic')}</option>
-                            </select>
-                          </div>
-                          <div className="form-group full-width">
-                            <label>{t('patientDetail.notes')}</label>
-                            <textarea
-                              value={recordForm.notes || record.notes || ''}
-                              onChange={(e) => setRecordForm({ ...recordForm, notes: e.target.value })}
-                              rows={3}
-                            />
-                          </div>
-                        </div>
-                        <div className="form-actions">
-                          <button className="btn-cancel" onClick={() => { setEditingRecordId(null); setRecordForm({}); }}>{t('patientDetail.cancel')}</button>
-                          <button className="btn-save" onClick={() => updateRecordMutation.mutate({ recordId: record.idRecord, updates: recordForm })}>{t('patientDetail.save')}</button>
-                        </div>
+            <div className="section-content">
+              {clinicalHistoryBackground ? (
+                <>
+                  {/* Heredofamiliares */}
+                  <div className="background-subsection">
+                    <h4 className="background-subtitle">{t('patientDetail.heredofamiliares')}</h4>
+                    {clinicalHistoryBackground.family ? (
+                      <div className="background-content">
+                        <p>{clinicalHistoryBackground.family}</p>
                       </div>
                     ) : (
-                      <>
-                        <div className="record-header">
-                          <div>
-                            <span className="record-condition">{record.condition || t('patientDetail.unknownCondition')}</span>
-                            {record.status && <span className={`status-badge ${record.status.toLowerCase()}`}>{record.status}</span>}
-                          </div>
-                          <div className="item-actions">
-                            <button className="btn-icon-edit" onClick={() => { setEditingRecordId(record.idRecord); setRecordForm(record); }}>
-                              <Edit2 size={14} />
-                            </button>
-                            <button className="btn-icon-delete" onClick={() => confirm(t('patientDetail.deleteRecord')) && deleteRecordMutation.mutate(record.idRecord)}>
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                        {record.diagnosisDate && (
-                          <p className="record-date">{t('patientDetail.diagnosed')}: {formatDate(record.diagnosisDate)}</p>
-                        )}
-                        {record.notes && <p className="record-notes">{record.notes}</p>}
-                      </>
+                      <p className="no-data">{t('patientDetail.noData')}</p>
                     )}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="no-data">{t('patientDetail.noPathologicalRecords')}</p>
-            )}
-          </div>
-          </>
+
+                  {/* Personales Patológicos */}
+                  <div className="background-subsection">
+                    <h4 className="background-subtitle">{t('patientDetail.personalesPatologicos')}</h4>
+                    {clinicalHistoryBackground.personal ? (
+                      <div className="background-content">
+                        <p>{clinicalHistoryBackground.personal}</p>
+                      </div>
+                    ) : (
+                      <p className="no-data">{t('patientDetail.noData')}</p>
+                    )}
+                  </div>
+
+                  {/* Personales No Patológicos */}
+                  <div className="background-subsection">
+                    <h4 className="background-subtitle">{t('patientDetail.personalesNoPatologicos')}</h4>
+                    {clinicalHistoryBackground.nonPathological ? (
+                      <div className="background-content">
+                        <p>{clinicalHistoryBackground.nonPathological}</p>
+                      </div>
+                    ) : (
+                      <p className="no-data">{t('patientDetail.noData')}</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="no-data">{t('patientDetail.noAntecedents')}</p>
+              )}
+            </div>
           )}
         </div>
 
@@ -1301,72 +1649,126 @@ export const PatientDetail = () => {
           <>
 
           {showAddVital && (
-            <div className="crud-form">
-              <h4>{t('patientDetail.addNewVitalSigns')}</h4>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>{t('patientDetail.date')} {t('patientDetail.required')}</label>
-                  <input
-                    type="date"
-                    value={vitalForm.date || ''}
-                    onChange={(e) => setVitalForm({ ...vitalForm, date: e.target.value })}
-                  />
+            <>
+              {!showVitalConfirmation ? (
+                <div className="crud-form">
+                  <h4>{t('patientDetail.addNewVitalSigns')}</h4>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>{t('patientDetail.date')} {t('patientDetail.required')}</label>
+                      <input
+                        type="date"
+                        value={vitalForm.date || ''}
+                        onChange={(e) => setVitalForm({ ...vitalForm, date: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>{t('patientDetail.systolic')}</label>
+                      <input
+                        type="number"
+                        value={vitalForm.systolic || ''}
+                        onChange={(e) => setVitalForm({ ...vitalForm, systolic: e.target.value ? Number(e.target.value) : undefined })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>{t('patientDetail.diastolic')}</label>
+                      <input
+                        type="number"
+                        value={vitalForm.diastolic || ''}
+                        onChange={(e) => setVitalForm({ ...vitalForm, diastolic: e.target.value ? Number(e.target.value) : undefined })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>{t('patientDetail.heartRate')}</label>
+                      <input
+                        type="number"
+                        value={vitalForm.heartRate || ''}
+                        onChange={(e) => setVitalForm({ ...vitalForm, heartRate: e.target.value ? Number(e.target.value) : undefined })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>{t('patientDetail.temperature')}</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={vitalForm.temperature || ''}
+                        onChange={(e) => setVitalForm({ ...vitalForm, temperature: e.target.value ? Number(e.target.value) : undefined })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>{t('patientDetail.oxygenSaturation')}</label>
+                      <input
+                        type="number"
+                        value={vitalForm.oxygenSaturation || ''}
+                        onChange={(e) => setVitalForm({ ...vitalForm, oxygenSaturation: e.target.value ? Number(e.target.value) : undefined })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>{t('patientDetail.respiratoryRate')}</label>
+                      <input
+                        type="number"
+                        value={vitalForm.respiratoryRate || ''}
+                        onChange={(e) => setVitalForm({ ...vitalForm, respiratoryRate: e.target.value ? Number(e.target.value) : undefined })}
+                      />
+                    </div>
+                  </div>
+                  <div className="form-actions">
+                    <button className="btn-cancel" onClick={() => { setShowAddVital(false); setVitalForm({}); setShowVitalConfirmation(false); }}>{t('patientDetail.cancel')}</button>
+                    <button className="btn-save" onClick={handleVitalSave} disabled={createVitalMutation.isPending}>{t('patientDetail.continue')}</button>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>{t('patientDetail.systolic')}</label>
-                  <input
-                    type="number"
-                    value={vitalForm.systolic || ''}
-                    onChange={(e) => setVitalForm({ ...vitalForm, systolic: Number(e.target.value) })}
-                  />
+              ) : (
+                <div className="crud-form">
+                  <h4>{t('patientDetail.confirmVitalData')}</h4>
+                  <div className="vital-confirmation">
+                    <p className="confirmation-message">{t('patientDetail.confirmVitalMessage')}</p>
+                    <div className="confirmation-data">
+                      <div className="confirmation-row">
+                        <strong>{t('patientDetail.date')}:</strong>
+                        <span>{vitalForm.date ? formatDate(vitalForm.date) : '-'}</span>
+                      </div>
+                      {vitalForm.systolic && vitalForm.diastolic && (
+                        <div className="confirmation-row">
+                          <strong>{t('patientDetail.bloodPressure')}:</strong>
+                          <span>{vitalForm.systolic}/{vitalForm.diastolic} mmHg</span>
+                        </div>
+                      )}
+                      {vitalForm.heartRate && (
+                        <div className="confirmation-row">
+                          <strong>{t('patientDetail.heartRate')}:</strong>
+                          <span>{vitalForm.heartRate} bpm</span>
+                        </div>
+                      )}
+                      {vitalForm.temperature && (
+                        <div className="confirmation-row">
+                          <strong>{t('patientDetail.temperature')}:</strong>
+                          <span>{vitalForm.temperature}°C</span>
+                        </div>
+                      )}
+                      {vitalForm.oxygenSaturation && (
+                        <div className="confirmation-row">
+                          <strong>{t('patientDetail.oxygenSaturation')}:</strong>
+                          <span>{vitalForm.oxygenSaturation}%</span>
+                        </div>
+                      )}
+                      {vitalForm.respiratoryRate && (
+                        <div className="confirmation-row">
+                          <strong>{t('patientDetail.respiratoryRate')}:</strong>
+                          <span>{vitalForm.respiratoryRate} rpm</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="form-actions">
+                    <button className="btn-cancel" onClick={() => setShowVitalConfirmation(false)}>{t('patientDetail.goBack')}</button>
+                    <button className="btn-save" onClick={confirmVitalSave} disabled={createVitalMutation.isPending}>
+                      {createVitalMutation.isPending ? t('patientDetail.saving') : t('patientDetail.confirmAndSave')}
+                    </button>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>{t('patientDetail.diastolic')}</label>
-                  <input
-                    type="number"
-                    value={vitalForm.diastolic || ''}
-                    onChange={(e) => setVitalForm({ ...vitalForm, diastolic: Number(e.target.value) })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>{t('patientDetail.heartRate')}</label>
-                  <input
-                    type="number"
-                    value={vitalForm.heartRate || ''}
-                    onChange={(e) => setVitalForm({ ...vitalForm, heartRate: Number(e.target.value) })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>{t('patientDetail.temperature')}</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={vitalForm.temperature || ''}
-                    onChange={(e) => setVitalForm({ ...vitalForm, temperature: Number(e.target.value) })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>{t('patientDetail.oxygenSaturation')}</label>
-                  <input
-                    type="number"
-                    value={vitalForm.oxygenSaturation || ''}
-                    onChange={(e) => setVitalForm({ ...vitalForm, oxygenSaturation: Number(e.target.value) })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>{t('patientDetail.respiratoryRate')}</label>
-                  <input
-                    type="number"
-                    value={vitalForm.respiratoryRate || ''}
-                    onChange={(e) => setVitalForm({ ...vitalForm, respiratoryRate: Number(e.target.value) })}
-                  />
-                </div>
-              </div>
-              <div className="form-actions">
-                <button className="btn-cancel" onClick={() => { setShowAddVital(false); setVitalForm({}); }}>{t('patientDetail.cancel')}</button>
-                <button className="btn-save" onClick={() => createVitalMutation.mutate(vitalForm)}>{t('patientDetail.save')}</button>
-              </div>
-            </div>
+              )}
+            </>
           )}
 
           <div className="section-content">
@@ -1375,103 +1777,38 @@ export const PatientDetail = () => {
               <div className="vitals-list">
                 {vitals.slice(0, visibleVitalsCount).map((vital: Vital, index: number) => (
                   <div key={vital.idVital || index} className="vital-item">
-                    {editingVitalId === vital.idVital ? (
-                      <div className="crud-form-inline">
-                        <div className="form-grid">
-                          <div className="form-group">
-                            <label>{t('patientDetail.date')}</label>
-                            <input
-                              type="date"
-                              value={vitalForm.date || vital.date}
-                              onChange={(e) => setVitalForm({ ...vitalForm, date: e.target.value })}
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>{t('patientDetail.systolic')}</label>
-                            <input
-                              type="number"
-                              value={vitalForm.systolic ?? vital.systolic ?? ''}
-                              onChange={(e) => setVitalForm({ ...vitalForm, systolic: Number(e.target.value) })}
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>{t('patientDetail.diastolic')}</label>
-                            <input
-                              type="number"
-                              value={vitalForm.diastolic ?? vital.diastolic ?? ''}
-                              onChange={(e) => setVitalForm({ ...vitalForm, diastolic: Number(e.target.value) })}
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>{t('patientDetail.heartRate')}</label>
-                            <input
-                              type="number"
-                              value={vitalForm.heartRate ?? vital.heartRate ?? ''}
-                              onChange={(e) => setVitalForm({ ...vitalForm, heartRate: Number(e.target.value) })}
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>{t('patientDetail.temperature')}</label>
-                            <input
-                              type="number"
-                              step="0.1"
-                              value={vitalForm.temperature ?? vital.temperature ?? ''}
-                              onChange={(e) => setVitalForm({ ...vitalForm, temperature: Number(e.target.value) })}
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>{t('patientDetail.o2Sat')}</label>
-                            <input
-                              type="number"
-                              value={vitalForm.oxygenSaturation ?? vital.oxygenSaturation ?? ''}
-                              onChange={(e) => setVitalForm({ ...vitalForm, oxygenSaturation: Number(e.target.value) })}
-                            />
-                          </div>
-                        </div>
-                        <div className="form-actions">
-                          <button className="btn-cancel" onClick={() => { setEditingVitalId(null); setVitalForm({}); }}>{t('patientDetail.cancel')}</button>
-                          <button className="btn-save" onClick={() => updateVitalMutation.mutate({ vitalId: vital.idVital!, updates: vitalForm })}>{t('patientDetail.save')}</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="vital-header">
-                          <div className="vital-date">{formatDate(vital.date)}</div>
-                          <div className="item-actions">
-                            <button className="btn-icon-edit" onClick={() => { setEditingVitalId(vital.idVital!); setVitalForm(vital); }}>
-                              <Edit2 size={14} />
-                            </button>
-                            <button className="btn-icon-delete" onClick={() => confirm(t('patientDetail.deleteVitals')) && deleteVitalMutation.mutate(vital.idVital!)}>
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="vital-measurements">
-                          {vital.systolic && vital.diastolic && (
-                            <span className="vital-measure">
-                              <Heart size={14} />
-                              BP: {vital.systolic}/{vital.diastolic} mmHg
-                            </span>
-                          )}
-                          {vital.heartRate && (
-                            <span className="vital-measure">
-                              <Activity size={14} />
-                              HR: {vital.heartRate} bpm
-                            </span>
-                          )}
-                          {vital.temperature && (
-                            <span className="vital-measure">
-                              Temp: {vital.temperature}°C
-                            </span>
-                          )}
-                          {vital.oxygenSaturation && (
-                            <span className="vital-measure">
-                              O2: {vital.oxygenSaturation}%
-                            </span>
-                          )}
-                        </div>
-                      </>
-                    )}
+                    <div className="vital-header">
+                      <div className="vital-date">{formatDate(vital.date)}</div>
+                    </div>
+                    <div className="vital-measurements">
+                      {vital.systolic && vital.diastolic && (
+                        <span className="vital-measure">
+                          <Heart size={14} />
+                          BP: {vital.systolic}/{vital.diastolic} mmHg
+                        </span>
+                      )}
+                      {vital.heartRate && (
+                        <span className="vital-measure">
+                          <Activity size={14} />
+                          HR: {vital.heartRate} bpm
+                        </span>
+                      )}
+                      {vital.temperature && (
+                        <span className="vital-measure">
+                          Temp: {vital.temperature}°C
+                        </span>
+                      )}
+                      {vital.oxygenSaturation && (
+                        <span className="vital-measure">
+                          O2: {vital.oxygenSaturation}%
+                        </span>
+                      )}
+                      {vital.respiratoryRate && (
+                        <span className="vital-measure">
+                          RR: {vital.respiratoryRate} rpm
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1507,30 +1844,86 @@ export const PatientDetail = () => {
             <div className="section-content">
               {labs.length > 0 ? (
                 <>
-                  <div className="labs-list">
-                    {labs.slice(0, visibleLabsCount).map((lab: Lab, index: number) => (
-                      <div
-                        key={lab.idLabs || index}
-                        className="lab-item-compact clickable"
-                        onClick={() => handleOpenLab(lab)}
-                      >
-                        <Beaker size={16} className="lab-icon" />
-                        <span className="lab-name-compact">
-                          {lab.testName || `Lab Test #${lab.idContent}`}
-                        </span>
-                        <span className="lab-value-compact">{lab.value}</span>
-                        <span className="lab-date-compact">{formatDate(lab.date)}</span>
-                      </div>
-                    ))}
-                  </div>
-                  {labs.length > visibleLabsCount && (
-                    <button
-                      className="btn-load-more"
-                      onClick={() => setVisibleLabsCount(prev => prev + 5)}
-                    >
-                      {t('patientDetail.seeMore')} ({labs.length - visibleLabsCount} {t('patientDetail.remaining')})
-                    </button>
-                  )}
+                  {(() => {
+                    const groupedLabs = groupLabsByTest();
+                    const categoryOrder = ['biometriaHematica', 'quimicaSanguinea', 'funcionHepatica', 'lipidos', 'otros'];
+                    
+                    return categoryOrder.map((categoryKey) => {
+                      const category = groupedLabs[categoryKey];
+                      const testNames = Object.keys(category.tests);
+                      
+                      if (testNames.length === 0) return null;
+                      
+                      return (
+                        <div key={categoryKey} className="lab-category-group">
+                          <h4 className="lab-category-title">
+                            {t(`patientDetail.labTests.categories.${categoryKey}`)}
+                          </h4>
+                          {testNames.map((testName) => {
+                            const testLabs = category.tests[testName];
+                            const hasUnit = testLabs.some(lab => lab.unit);
+                            const hasReferenceRange = testLabs.some(lab => lab.referenceRange);
+                            const hasComment = testLabs.some(lab => lab.comment);
+                            
+                            // Calculate grid columns dynamically based on visible columns
+                            const gridTemplate = `minmax(0, 1.2fr) minmax(0, 1fr)${hasUnit ? ' minmax(0, 1.2fr)' : ''}${hasReferenceRange ? ' minmax(0, 1.3fr)' : ''}${hasComment ? ' minmax(0, 1.8fr)' : ''}`;
+                            
+                            return (
+                              <div key={testName} className="lab-test-group">
+                                <h5 className="lab-test-name">{testName}</h5>
+                                <div className="lab-historical-table">
+                                  <div 
+                                    className="lab-table-header"
+                                    style={{ gridTemplateColumns: gridTemplate }}
+                                  >
+                                    <span className="lab-table-header-cell">{t('patientDetail.labTests.date')}</span>
+                                    <span className="lab-table-header-cell">{t('patientDetail.labTests.value')}</span>
+                                    {hasUnit && (
+                                      <span className="lab-table-header-cell">{t('patientDetail.labTests.unit')}</span>
+                                    )}
+                                    {hasReferenceRange && (
+                                      <span className="lab-table-header-cell">{t('patientDetail.labTests.referenceRange')}</span>
+                                    )}
+                                    {hasComment && (
+                                      <span className="lab-table-header-cell">{t('patientDetail.labTests.comment')}</span>
+                                    )}
+                                  </div>
+                                  <div className="lab-table-body">
+                                    {testLabs.map((lab, index) => (
+                                      <div
+                                        key={lab.idLabs || index}
+                                        className="lab-table-row clickable"
+                                        style={{ gridTemplateColumns: gridTemplate }}
+                                        onClick={() => handleOpenLab(lab)}
+                                      >
+                                        <span className="lab-table-cell">{formatDateShort(lab.date)}</span>
+                                        <span className="lab-table-cell lab-value">{lab.value}</span>
+                                        {hasUnit && (
+                                          <span className="lab-table-cell">{lab.unit || '-'}</span>
+                                        )}
+                                        {hasReferenceRange && (
+                                          <span className="lab-table-cell">{lab.referenceRange || '-'}</span>
+                                        )}
+                                        {hasComment && (
+                                          <span className="lab-table-cell lab-comment">
+                                            {lab.comment ? (
+                                              <span className="comment-preview" title={lab.comment}>
+                                                {lab.comment.length > 30 ? `${lab.comment.substring(0, 30)}...` : lab.comment}
+                                              </span>
+                                            ) : '-'}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    });
+                  })()}
                 </>
               ) : (
                 <p className="no-data">{t('patientDetail.noLabResults')}</p>
@@ -1549,18 +1942,11 @@ export const PatientDetail = () => {
               </span>
               {expandedSections.vaccines ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </h3>
-            {expandedSections.vaccines && (
-              <div className="section-button-row">
-                <button className="btn-add-small" onClick={() => setShowAddVaccine(true)}>
-                  <Plus size={16} /> {t('patientDetail.addVaccine')}
-                </button>
-              </div>
-            )}
           </div>
           {expandedSections.vaccines && (
           <>
 
-          {showAddVaccine && (
+          {showAddVaccine && !showAddAppointment && !editingAppointmentId && (
             <div className="crud-form">
               <h4>{t('patientDetail.addNewVaccine')}</h4>
               <div className="form-grid">
@@ -1578,22 +1964,6 @@ export const PatientDetail = () => {
                     type="date"
                     value={vaccineForm.date || ''}
                     onChange={(e) => setVaccineForm({ ...vaccineForm, date: e.target.value })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>{t('patientDetail.dose')}</label>
-                  <input
-                    type="text"
-                    value={vaccineForm.dose || ''}
-                    onChange={(e) => setVaccineForm({ ...vaccineForm, dose: e.target.value })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>{t('patientDetail.manufacturer')}</label>
-                  <input
-                    type="text"
-                    value={vaccineForm.manufacturer || ''}
-                    onChange={(e) => setVaccineForm({ ...vaccineForm, manufacturer: e.target.value })}
                   />
                 </div>
                 <div className="form-group">
@@ -1637,22 +2007,6 @@ export const PatientDetail = () => {
                             />
                           </div>
                           <div className="form-group">
-                            <label>{t('patientDetail.dose')}</label>
-                            <input
-                              type="text"
-                              value={vaccineForm.dose || vaccine.dose || ''}
-                              onChange={(e) => setVaccineForm({ ...vaccineForm, dose: e.target.value })}
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>{t('patientDetail.manufacturer')}</label>
-                            <input
-                              type="text"
-                              value={vaccineForm.manufacturer || vaccine.manufacturer || ''}
-                              onChange={(e) => setVaccineForm({ ...vaccineForm, manufacturer: e.target.value })}
-                            />
-                          </div>
-                          <div className="form-group">
                             <label>{t('patientDetail.nextDose')}</label>
                             <input
                               type="date"
@@ -1682,8 +2036,6 @@ export const PatientDetail = () => {
                             </button>
                           </div>
                         </div>
-                        {vaccine.dose && <p className="vaccine-dose">{t('patientDetail.dose')}: {vaccine.dose}</p>}
-                        {vaccine.manufacturer && <p className="vaccine-manufacturer">{vaccine.manufacturer}</p>}
                         {vaccine.nextDose && (
                           <p className="vaccine-next">{t('patientDetail.nextDose')}: {formatDate(vaccine.nextDose)}</p>
                         )}
@@ -1956,17 +2308,10 @@ export const PatientDetail = () => {
               </span>
               {expandedSections.documents ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </h3>
-            {expandedSections.documents && (
-              <div className="section-button-row">
-                <button className="btn-add-small" onClick={() => setShowUploadFile(true)}>
-                  <Plus size={16} /> {t('patientDetail.uploadDocument')}
-                </button>
-              </div>
-            )}
           </div>
           {expandedSections.documents && (
             <>
-            {showUploadFile && (
+            {showUploadFile && !showAddAppointment && !editingAppointmentId && (
               <div className="crud-form">
                 <h4>{t('patientDetail.uploadNewDocument')}</h4>
                 <div className="form-grid">
@@ -1982,17 +2327,79 @@ export const PatientDetail = () => {
                     )}
                   </div>
                   <div className="form-group full-width">
-                    <label>{t('patientDetail.notes')}</label>
+                    <label>{t('patientDetail.subsequentNoteInfo')}</label>
+                    <p className="form-hint">{t('patientDetail.subsequentNoteHint')}</p>
+                  </div>
+                  <div className="form-group full-width">
+                    <label>{t('patientDetail.subsequentNoteDate')}</label>
+                    <div className="input-with-icon">
+                      <Calendar size={18} />
+                      <input
+                        type="datetime-local"
+                        value={subsequentNoteForm.date}
+                        onChange={(e) => setSubsequentNoteForm({ ...subsequentNoteForm, date: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group full-width">
+                    <label>{t('patientDetail.subsequentNoteMotive')}</label>
+                    <textarea
+                      value={subsequentNoteForm.motive}
+                      onChange={(e) => setSubsequentNoteForm({ ...subsequentNoteForm, motive: e.target.value })}
+                      rows={2}
+                      placeholder={t('patientDetail.subsequentNoteMotivePlaceholder')}
+                    />
+                  </div>
+                  <div className="form-group full-width">
+                    <label>{t('patientDetail.subsequentNoteDiagnosis')}</label>
+                    <textarea
+                      value={subsequentNoteForm.diagnosis}
+                      onChange={(e) => setSubsequentNoteForm({ ...subsequentNoteForm, diagnosis: e.target.value })}
+                      rows={2}
+                      placeholder={t('patientDetail.subsequentNoteDiagnosisPlaceholder')}
+                    />
+                  </div>
+                  <div className="form-group full-width">
+                    <label>{t('patientDetail.subsequentNoteTreatment')}</label>
+                    <textarea
+                      value={subsequentNoteForm.treatment}
+                      onChange={(e) => setSubsequentNoteForm({ ...subsequentNoteForm, treatment: e.target.value })}
+                      rows={2}
+                      placeholder={t('patientDetail.subsequentNoteTreatmentPlaceholder')}
+                    />
+                  </div>
+                  <div className="form-group full-width">
+                    <label>{t('patientDetail.subsequentNoteNotes')}</label>
+                    <textarea
+                      value={subsequentNoteForm.notes}
+                      onChange={(e) => setSubsequentNoteForm({ ...subsequentNoteForm, notes: e.target.value })}
+                      rows={3}
+                      placeholder={t('patientDetail.subsequentNoteNotesPlaceholder')}
+                    />
+                  </div>
+                  <div className="form-group full-width">
+                    <label>{t('patientDetail.fileComment')}</label>
                     <textarea
                       value={fileComment}
                       onChange={(e) => setFileComment(e.target.value)}
-                      rows={3}
-                      placeholder={t('patientDetail.notes')}
+                      rows={2}
+                      placeholder={t('patientDetail.fileCommentPlaceholder')}
                     />
                   </div>
                 </div>
                 <div className="form-actions">
-                  <button className="btn-cancel" onClick={() => { setShowUploadFile(false); setSelectedFile(null); setFileComment(''); }}>
+                  <button className="btn-cancel" onClick={() => { 
+                    setShowUploadFile(false); 
+                    setSelectedFile(null); 
+                    setFileComment('');
+                    setSubsequentNoteForm({
+                      date: '',
+                      motive: '',
+                      diagnosis: '',
+                      treatment: '',
+                      notes: ''
+                    });
+                  }}>
                     {t('patientDetail.cancel')}
                   </button>
                   <button
@@ -2060,10 +2467,11 @@ export const PatientDetail = () => {
             </span>
             {expandedSections.appointments ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
           </h3>
-          {!showAddAppointment && expandedSections.appointments && (
+          {!showAddAppointment && !editingAppointmentId && expandedSections.appointments && (
             <div className="section-button-row">
               <button className="btn-add-small" onClick={() => setShowAddAppointment(true)}>
                 <Plus size={16} />
+                {t('medic.patientDetail.addAppointment')}
               </button>
             </div>
           )}
@@ -2093,6 +2501,29 @@ export const PatientDetail = () => {
                     onChange={(e) => setNewAppointment({...newAppointment, motive: e.target.value})}
                     className="form-textarea"
                     rows={2}
+                    placeholder={t('medic.patientDetail.reasonPlaceholder')}
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label>{t('medic.patientDetail.diagnosis')}</label>
+                  <textarea
+                    value={newAppointment.diagnosis}
+                    onChange={(e) => setNewAppointment({...newAppointment, diagnosis: e.target.value})}
+                    className="form-textarea"
+                    rows={2}
+                    placeholder={t('medic.patientDetail.diagnosisPlaceholder')}
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label>{t('medic.patientDetail.treatment')}</label>
+                  <textarea
+                    value={newAppointment.treatment}
+                    onChange={(e) => setNewAppointment({...newAppointment, treatment: e.target.value})}
+                    className="form-textarea"
+                    rows={2}
+                    placeholder={t('medic.patientDetail.treatmentPlaceholder')}
                   />
                 </div>
 
@@ -2103,6 +2534,7 @@ export const PatientDetail = () => {
                     onChange={(e) => setNewAppointment({...newAppointment, notes: e.target.value})}
                     className="form-textarea"
                     rows={3}
+                    placeholder={t('medic.patientDetail.notesPlaceholder')}
                   />
                 </div>
               </div>
@@ -2115,6 +2547,310 @@ export const PatientDetail = () => {
                 <button className="btn-save" onClick={handleAddAppointment}>
                   <Save size={18} />
                   <span>{t('medic.patientDetail.save')}</span>
+                </button>
+              </div>
+              
+              {/* Additional actions for visit */}
+              <div className="appointment-additional-actions">
+                <h4>{t('medic.patientDetail.addToVisit')}</h4>
+                <div className="additional-actions-buttons">
+                  <button 
+                    type="button"
+                    className="btn-add-small" 
+                    onClick={(e) => {
+                      try {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowAddLab(true);
+                        setTimeout(() => {
+                          const formElement = document.getElementById('lab-form-container');
+                          if (formElement) {
+                            formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        }, 100);
+                      } catch (error) {
+                        alert(t('patientDetail.saveError'));
+                      }
+                    }}
+                    disabled={showAddLab || showUploadFile || showAddVaccine}
+                  >
+                    <Beaker size={28} />
+                    <span>{t('patientDetail.labResult')}</span>
+                  </button>
+                  <button 
+                    className="btn-add-small" 
+                    onClick={() => setShowUploadFile(true)}
+                    disabled={showAddLab || showUploadFile || showAddVaccine}
+                  >
+                    <File size={28} />
+                    <span>{t('patientDetail.document')}</span>
+                  </button>
+                  <button 
+                    className="btn-add-small" 
+                    onClick={() => setShowAddVaccine(true)}
+                    disabled={showAddLab || showUploadFile || showAddVaccine}
+                  >
+                    <Syringe size={28} />
+                    <span>{t('patientDetail.vaccine')}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Lab form within appointment context */}
+          {showAddLab && (showAddAppointment || editingAppointmentId) && (
+            <div className="crud-form" id="lab-form-container">
+              <h4>{t('patientDetail.addLabResultFromHistory')}</h4>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>{t('patientDetail.selectTest')} {t('patientDetail.required')}</label>
+                  <select
+                    value={labForm.idContent || ''}
+                    onChange={(e) => {
+                      try {
+                        const selectedTest = labTests?.find((test: any) => test.idContent === parseInt(e.target.value));
+                        setLabForm({
+                          ...labForm,
+                          idContent: selectedTest ? parseInt(e.target.value) : undefined,
+                          testName: selectedTest?.name || '',
+                        });
+                      } catch (error) {
+                        console.error('Error selecting test:', error);
+                      }
+                    }}
+                    className="form-select"
+                  >
+                    <option value="">{t('patientDetail.select')}</option>
+                    {labTests && Array.isArray(labTests) && labTests.length > 0 ? (
+                      labTests.map((test: any) => (
+                        <option key={test.idContent} value={test.idContent}>
+                          {test.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled>{t('patientDetail.loadingTests') || 'Loading tests...'}</option>
+                    )}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>{t('patientDetail.labTests.date')} {t('patientDetail.required')}</label>
+                  <input
+                    type="date"
+                    value={labForm.date || ''}
+                    onChange={(e) => setLabForm({ ...labForm, date: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>{t('patientDetail.testValue')} {t('patientDetail.required')}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={labForm.value || ''}
+                    onChange={(e) => setLabForm({ ...labForm, value: parseFloat(e.target.value) || undefined })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>{t('patientDetail.testUnit')}</label>
+                  <input
+                    type="text"
+                    value={labForm.unit || ''}
+                    onChange={(e) => setLabForm({ ...labForm, unit: e.target.value })}
+                    placeholder={t('patientDetail.testUnitPlaceholder')}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>{t('patientDetail.testReferenceRange')}</label>
+                  <input
+                    type="text"
+                    value={labForm.referenceRange || ''}
+                    onChange={(e) => setLabForm({ ...labForm, referenceRange: e.target.value })}
+                    placeholder={t('patientDetail.testReferenceRangePlaceholder')}
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label>{t('patientDetail.notes')}</label>
+                  <textarea
+                    value={labForm.comment || ''}
+                    onChange={(e) => setLabForm({ ...labForm, comment: e.target.value })}
+                    className="form-textarea"
+                    rows={2}
+                  />
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button className="btn-cancel" onClick={() => { setShowAddLab(false); setLabForm({}); }}>
+                  <X size={18} />
+                  <span>{t('patientDetail.cancel')}</span>
+                </button>
+                <button 
+                  className="btn-save" 
+                  onClick={() => {
+                    if (!labForm.idContent || labForm.value === undefined || !labForm.date) {
+                      alert(t('patientDetail.allFieldsRequired'));
+                      return;
+                    }
+                    createLabMutation.mutate({
+                      idContent: labForm.idContent,
+                      value: labForm.value,
+                      date: labForm.date,
+                      comment: labForm.comment || null,
+                    });
+                  }}
+                  disabled={createLabMutation.isPending}
+                >
+                  <Save size={18} />
+                  <span>{createLabMutation.isPending ? t('patientDetail.saving') : t('patientDetail.save')}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Documents form within appointment context */}
+          {showUploadFile && (showAddAppointment || editingAppointmentId) && (
+            <div className="crud-form">
+              <h4>{t('patientDetail.uploadNewDocument')}</h4>
+              <div className="form-grid">
+                <div className="form-group full-width">
+                  <label>{t('patientDetail.selectFile')} {t('patientDetail.required')}</label>
+                  <input
+                    type="file"
+                    onChange={handleFileSelect}
+                    accept="image/*,video/*,audio/*,.pdf"
+                  />
+                  {selectedFile && (
+                    <p className="file-selected-name">{selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)</p>
+                  )}
+                </div>
+                <div className="form-group full-width">
+                  <label>{t('patientDetail.subsequentNoteInfo')}</label>
+                  <p className="form-hint">{t('patientDetail.subsequentNoteHint')}</p>
+                </div>
+                <div className="form-group full-width">
+                  <label>{t('patientDetail.subsequentNoteDate')}</label>
+                  <div className="input-with-icon">
+                    <Calendar size={18} />
+                    <input
+                      type="datetime-local"
+                      value={subsequentNoteForm.date}
+                      onChange={(e) => setSubsequentNoteForm({ ...subsequentNoteForm, date: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="form-group full-width">
+                  <label>{t('patientDetail.subsequentNoteMotive')}</label>
+                  <textarea
+                    value={subsequentNoteForm.motive}
+                    onChange={(e) => setSubsequentNoteForm({ ...subsequentNoteForm, motive: e.target.value })}
+                    rows={2}
+                    placeholder={t('patientDetail.subsequentNoteMotivePlaceholder')}
+                  />
+                </div>
+                <div className="form-group full-width">
+                  <label>{t('patientDetail.subsequentNoteDiagnosis')}</label>
+                  <textarea
+                    value={subsequentNoteForm.diagnosis}
+                    onChange={(e) => setSubsequentNoteForm({ ...subsequentNoteForm, diagnosis: e.target.value })}
+                    rows={2}
+                    placeholder={t('patientDetail.subsequentNoteDiagnosisPlaceholder')}
+                  />
+                </div>
+                <div className="form-group full-width">
+                  <label>{t('patientDetail.subsequentNoteTreatment')}</label>
+                  <textarea
+                    value={subsequentNoteForm.treatment}
+                    onChange={(e) => setSubsequentNoteForm({ ...subsequentNoteForm, treatment: e.target.value })}
+                    rows={2}
+                    placeholder={t('patientDetail.subsequentNoteTreatmentPlaceholder')}
+                  />
+                </div>
+                <div className="form-group full-width">
+                  <label>{t('patientDetail.subsequentNoteNotes')}</label>
+                  <textarea
+                    value={subsequentNoteForm.notes}
+                    onChange={(e) => setSubsequentNoteForm({ ...subsequentNoteForm, notes: e.target.value })}
+                    rows={3}
+                    placeholder={t('patientDetail.subsequentNoteNotesPlaceholder')}
+                  />
+                </div>
+                <div className="form-group full-width">
+                  <label>{t('patientDetail.fileComment')}</label>
+                  <textarea
+                    value={fileComment}
+                    onChange={(e) => setFileComment(e.target.value)}
+                    rows={2}
+                    placeholder={t('patientDetail.fileCommentPlaceholder')}
+                  />
+                </div>
+              </div>
+              <div className="form-actions">
+                <button className="btn-cancel" onClick={() => { 
+                  setShowUploadFile(false); 
+                  setSelectedFile(null); 
+                  setFileComment('');
+                  setSubsequentNoteForm({
+                    date: '',
+                    motive: '',
+                    diagnosis: '',
+                    treatment: '',
+                    notes: ''
+                  });
+                }}>
+                  {t('patientDetail.cancel')}
+                </button>
+                <button
+                  className="btn-save"
+                  onClick={handleUploadFile}
+                  disabled={!selectedFile || uploadFileMutation.isPending}
+                >
+                  {uploadFileMutation.isPending ? t('patientDetail.uploading') : t('patientDetail.save')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Vaccine form within appointment context */}
+          {showAddVaccine && (showAddAppointment || editingAppointmentId) && (
+            <div className="crud-form">
+              <h4>{t('patientDetail.addNewVaccine')}</h4>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>{t('patientDetail.vaccineName')} {t('patientDetail.required')}</label>
+                  <input
+                    type="text"
+                    value={vaccineForm.vaccineName || ''}
+                    onChange={(e) => setVaccineForm({ ...vaccineForm, vaccineName: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>{t('patientDetail.date')} {t('patientDetail.required')}</label>
+                  <input
+                    type="date"
+                    value={vaccineForm.date || ''}
+                    onChange={(e) => setVaccineForm({ ...vaccineForm, date: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>{t('patientDetail.nextDoseDate')}</label>
+                  <input
+                    type="date"
+                    value={vaccineForm.nextDose || ''}
+                    onChange={(e) => setVaccineForm({ ...vaccineForm, nextDose: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-actions">
+                <button className="btn-cancel" onClick={() => { setShowAddVaccine(false); setVaccineForm({}); }}>
+                  {t('patientDetail.cancel')}
+                </button>
+                <button className="btn-save" onClick={() => createVaccineMutation.mutate(vaccineForm)}>
+                  {t('patientDetail.save')}
                 </button>
               </div>
             </div>
@@ -2150,6 +2886,29 @@ export const PatientDetail = () => {
                           onChange={(e) => setEditedAppointment({...editedAppointment, motive: e.target.value})}
                           className="form-textarea"
                           rows={2}
+                          placeholder={t('medic.patientDetail.reasonPlaceholder')}
+                        />
+                      </div>
+
+                      <div className="form-group full-width">
+                        <label>{t('medic.patientDetail.diagnosis')}</label>
+                        <textarea
+                          value={editedAppointment.diagnosis || ''}
+                          onChange={(e) => setEditedAppointment({...editedAppointment, diagnosis: e.target.value})}
+                          className="form-textarea"
+                          rows={2}
+                          placeholder={t('medic.patientDetail.diagnosisPlaceholder')}
+                        />
+                      </div>
+
+                      <div className="form-group full-width">
+                        <label>{t('medic.patientDetail.treatment')}</label>
+                        <textarea
+                          value={editedAppointment.treatment || ''}
+                          onChange={(e) => setEditedAppointment({...editedAppointment, treatment: e.target.value})}
+                          className="form-textarea"
+                          rows={2}
+                          placeholder={t('medic.patientDetail.treatmentPlaceholder')}
                         />
                       </div>
 
@@ -2160,6 +2919,7 @@ export const PatientDetail = () => {
                           onChange={(e) => setEditedAppointment({...editedAppointment, notes: e.target.value})}
                           className="form-textarea"
                           rows={3}
+                          placeholder={t('medic.patientDetail.notesPlaceholder')}
                         />
                       </div>
                     </div>
@@ -2173,6 +2933,54 @@ export const PatientDetail = () => {
                         <Save size={18} />
                         <span>{t('medic.patientDetail.save')}</span>
                       </button>
+                    </div>
+                    
+                    {/* Additional actions for visit */}
+                    <div className="appointment-additional-actions">
+                      <h4>{t('medic.patientDetail.addToVisit')}</h4>
+                      <div className="additional-actions-buttons">
+                        <button 
+                          type="button"
+                          className="btn-add-small" 
+                          onClick={(e) => {
+                            try {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setShowAddLab(true);
+                              // Scroll to form after a brief delay to ensure it's rendered
+                              setTimeout(() => {
+                                const formElement = document.getElementById('lab-form-container');
+                                if (formElement) {
+                                  formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }
+                              }, 100);
+                            } catch (error) {
+                              console.error('Error opening lab form:', error);
+                              alert(t('patientDetail.saveError'));
+                            }
+                          }}
+                          disabled={showAddLab || showUploadFile || showAddVaccine}
+                        >
+                          <Beaker size={28} />
+                          <span>{t('patientDetail.labResult')}</span>
+                        </button>
+                        <button 
+                          className="btn-add-small" 
+                          onClick={() => setShowUploadFile(true)}
+                          disabled={showAddLab || showUploadFile || showAddVaccine}
+                        >
+                          <File size={28} />
+                          <span>{t('patientDetail.document')}</span>
+                        </button>
+                        <button 
+                          className="btn-add-small" 
+                          onClick={() => setShowAddVaccine(true)}
+                          disabled={showAddLab || showUploadFile || showAddVaccine}
+                        >
+                          <Syringe size={28} />
+                          <span>{t('patientDetail.vaccine')}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
