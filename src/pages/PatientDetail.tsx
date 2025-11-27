@@ -1138,7 +1138,8 @@ export const PatientDetail = () => {
                 <span className="info-label">{t('medic.patientDetail.patientId')}</span>
                 <span className="info-value">
                   <User size={18} />
-                  #{patient.idPatient}
+                  {/* We use the idUser instead of the idPatient because the idPatient is not unique */}
+                  #{patient.idUser}
                 </span>
               </div>
             </div>
