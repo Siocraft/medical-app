@@ -393,3 +393,6 @@ export interface SearchPatientResponse {
   bloodGroup?: string;
   bloodRh?: string;
 }
+
+
+
