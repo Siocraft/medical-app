@@ -5,7 +5,7 @@ import { patientService } from '../services/patientService';
 import { Header } from '../components/Header';
 import { DoctorSection } from '../components/DoctorSection';
 import api from '../services/api';
-import type { PatientData, Allergy, Vital, Lab, Vaccine, PathologicalRecord, Contact, PatientFile, ClinicalHistory, ApiError, Patient } from '../types';
+import type { PatientData, Allergy, Vital, Lab, Vaccine, PathologicalRecord, Contact, PatientFile, ClinicalHistory, ApiError, Patient, SearchPatientResponse } from '../types';
 import {
   Mail,
   Phone,
@@ -39,7 +39,7 @@ export const Dashboard: React.FC = () => {
   const [patientData, setPatientData] = useState<PatientData | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Patient[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchPatientResponse[]>([]);
   const [searching, setSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
 
@@ -57,7 +57,7 @@ export const Dashboard: React.FC = () => {
     try {
       setSearching(true);
       const response = await api.get(`/medics/search-patients?q=${encodeURIComponent(searchQuery)}`);
-      const results = Array.isArray(response.data) ? response.data as Patient[] : [];
+      const results = Array.isArray(response.data) ? response.data as SearchPatientResponse[] : [];
       setSearchResults(results);
       setShowSearchResults(results.length > 0);
     } catch (error) {
@@ -205,10 +205,10 @@ export const Dashboard: React.FC = () => {
                           {patient.phone}
                         </span>
                       )}
-                      {(patient as any).recordNumber && (
+                      {(patient as SearchPatientResponse).recordNumber && (
                         <span className="search-result-detail">
                           <User size={12} />
-                          #{(patient as any).recordNumber}
+                          #{(patient as SearchPatientResponse).recordNumber}
                         </span>
                       )}
                     </div>

@@ -26,8 +26,9 @@ export const Login: React.FC = () => {
     try {
       await login({ email, password });
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('auth.login.error'));
+    } catch (err: unknown) {
+      const apiError = err as { response?: { data?: { message?: string } } };
+      setError(apiError.response?.data?.message || t('auth.login.error'));
     } finally {
       setLoading(false);
     }

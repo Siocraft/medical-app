@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { LanguageSelector } from '../components/LanguageSelector';
+import type { RegisterCredentials } from '../types';
 import './Register.css';
 
 export const Register: React.FC = () => {
@@ -40,7 +41,7 @@ export const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      const registrationData: any = { name, lname, email, password, type: userType };
+      const registrationData: RegisterCredentials = { name, lname, email, password, type: userType };
 
       // Add doctor email only if user is a patient and doctorEmail is provided
       if (userType === 'patient' && doctorEmail.trim()) {
@@ -49,8 +50,9 @@ export const Register: React.FC = () => {
 
       await register(registrationData);
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('auth.register.error'));
+    } catch (err: unknown) {
+      const apiError = err as { response?: { data?: { message?: string } } };
+      setError(apiError.response?.data?.message || t('auth.register.error'));
     } finally {
       setLoading(false);
     }

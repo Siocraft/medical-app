@@ -58,7 +58,8 @@ import type {
   UpdateContactData,
   LabTest,
   InsuranceListItem,
-  ApiError
+  ApiError,
+  SearchPatientResponse
 } from '../types';
 
 // Local Patient interface for PatientDetail (more specific than global Patient)
@@ -195,7 +196,7 @@ export const PatientDetail = () => {
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchPatientResponse[]>([]);
   const [searching, setSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
 
@@ -216,7 +217,7 @@ export const PatientDetail = () => {
     try {
       setSearching(true);
       const response = await api.get(`/medics/search-patients?q=${encodeURIComponent(searchQuery)}`);
-      const results = Array.isArray(response.data) ? response.data as any[] : [];
+      const results = Array.isArray(response.data) ? response.data as SearchPatientResponse[] : [];
       setSearchResults(results);
       // Auto-show modal when results are found
       if (results.length > 0) {
@@ -1121,7 +1122,7 @@ export const PatientDetail = () => {
             </button>
           </div>
           <div className="search-results-list">
-            {searchResults.map((patient: any) => (
+            {searchResults.map((patient: SearchPatientResponse) => (
               <div
                 key={patient.idPatient}
                 className="search-result-item"
@@ -1302,7 +1303,7 @@ export const PatientDetail = () => {
                 <span className="info-value">
                   <User size={18} />
                   {/* Display recordNumber if available, otherwise fallback to idUser */}
-                  {(patient as any).recordNumber ? `#${(patient as any).recordNumber}` : `#${patient.idUser}`}
+                  {(patient as SearchPatientResponse).recordNumber ? `#${(patient as SearchPatientResponse).recordNumber}` : `#${patient.idUser}`}
                 </span>
               </div>
             </div>

@@ -30,6 +30,7 @@ import {
   FileText
 } from 'lucide-react';
 import './MedicDashboard.css';
+import type { SearchPatientResponse } from '../types';
 
 interface Patient {
   idPatient: number;
@@ -59,7 +60,7 @@ export const MedicDashboard = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
-  const [patientSearchResults, setPatientSearchResults] = useState<any[]>([]);
+  const [patientSearchResults, setPatientSearchResults] = useState<SearchPatientResponse[]>([]);
   const [searching, setSearching] = useState(false);
   const [linking, setLinking] = useState<number | null>(null);
   const [contextMenu, setContextMenu] = useState<{ patientId: number; x: number; y: number } | null>(null);
@@ -156,9 +157,10 @@ export const MedicDashboard = () => {
       formik.resetForm();
       alert(t('medic.createPatient.success'));
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Error creating patient:', error);
-      alert(t('medic.createPatient.error') + ': ' + (error.response?.data?.message || error.message));
+      const apiError = error as { response?: { data?: { message?: string } }; message?: string };
+      alert(t('medic.createPatient.error') + ': ' + (apiError.response?.data?.message || apiError.message));
     },
   });
 
@@ -191,7 +193,7 @@ export const MedicDashboard = () => {
       recordNumberManual: false
     },
     validate: (values) => {
-      const errors: any = {};
+      const errors: Record<string, string> = {};
 
       // Required fields
       if (!values.name.trim()) {
@@ -262,9 +264,10 @@ export const MedicDashboard = () => {
       setPatientSearchResults([]);
       setShowLinkModal(false);
       queryClient.invalidateQueries({ queryKey: ['medic-patients'] });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error linking to patient:', error);
-      alert(error.response?.data?.message || t('medic.linkPatient.linkError'));
+      const apiError = error as { response?: { data?: { message?: string } } };
+      alert(apiError.response?.data?.message || t('medic.linkPatient.linkError'));
     } finally {
       setLinking(null);
     }
@@ -281,9 +284,10 @@ export const MedicDashboard = () => {
       alert(t('medic.patients.unlinkSuccess'));
       setContextMenu(null);
       queryClient.invalidateQueries({ queryKey: ['medic-patients'] });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error unlinking from patient:', error);
-      alert(error.response?.data?.message || t('medic.patients.unlinkError'));
+      const apiError = error as { response?: { data?: { message?: string } } };
+      alert(apiError.response?.data?.message || t('medic.patients.unlinkError'));
     } finally {
       setUnlinking(null);
     }
@@ -1013,7 +1017,7 @@ export const MedicDashboard = () => {
 
               {Array.isArray(patientSearchResults) && patientSearchResults.length > 0 && (
                 <div className="search-results" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {patientSearchResults.map((patient: any) => (
+                  {patientSearchResults.map((patient: SearchPatientResponse) => (
                     <div
                       key={patient.idPatient}
                       style={{

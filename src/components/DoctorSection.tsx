@@ -49,9 +49,10 @@ export const DoctorSection: React.FC<DoctorSectionProps> = ({ doctors, onDoctorL
       setSearchResults([]);
       setShowSearch(false);
       onDoctorLinked();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error linking to doctor:', error);
-      alert(error.response?.data?.message || t('dashboard.doctor.linkError'));
+      const apiError = error as { response?: { data?: { message?: string } } };
+      alert(apiError.response?.data?.message || t('dashboard.doctor.linkError'));
     } finally {
       setLinking(null);
     }
@@ -68,9 +69,10 @@ export const DoctorSection: React.FC<DoctorSectionProps> = ({ doctors, onDoctorL
       alert(t('dashboard.doctor.unlinkSuccess'));
       setContextMenu(null);
       onDoctorLinked();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error unlinking from doctor:', error);
-      alert(error.response?.data?.message || t('dashboard.doctor.unlinkError'));
+      const apiError = error as { response?: { data?: { message?: string } } };
+      alert(apiError.response?.data?.message || t('dashboard.doctor.unlinkError'));
     } finally {
       setUnlinking(null);
     }
