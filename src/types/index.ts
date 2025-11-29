@@ -53,6 +53,8 @@ export interface Patient {
   documentValue?: string;
   recordNumber?: string;
   insuranceComment?: string;
+  appointmentCount?: number;
+  lastAppointment?: string;
 }
 
 export interface ClinicalHistory {

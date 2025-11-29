@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -31,7 +31,9 @@ import {
   Weight,
   Ruler,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Search,
+  ChevronRight
 } from 'lucide-react';
 import './PatientDetail.css';
 import type {
@@ -80,6 +82,7 @@ interface Patient {
   idInsurance?: number;
   policy?: string;
   insuranceComment?: string;
+  recordNumber?: string;
 }
 
 // API functions
@@ -190,11 +193,78 @@ export const PatientDetail = () => {
     appointments: true
   });
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section as keyof typeof prev]
     }));
+  };
+
+  const searchPatients = useCallback(async () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    try {
+      setSearching(true);
+      const response = await api.get(`/medics/search-patients?q=${encodeURIComponent(searchQuery)}`);
+      const results = Array.isArray(response.data) ? response.data as any[] : [];
+      setSearchResults(results);
+      // Auto-show modal when results are found
+      if (results.length > 0) {
+        setShowSearchResults(true);
+      }
+    } catch (error) {
+      console.error('Error searching patients:', error);
+      setSearchResults([]);
+      setShowSearchResults(false);
+    } finally {
+      setSearching(false);
+    }
+  }, [searchQuery]);
+
+  // Debounced search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim()) {
+        searchPatients();
+      } else {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchPatients]);
+
+  const handlePatientSelect = (patientId: number) => {
+    navigate(`/medic/patient/${patientId}`);
+  };
+
+  const handleSearchFocus = () => {
+    // Don't auto-show modal on focus
+  };
+
+  const handleSearchBlur = () => {
+    // Don't hide on blur - let the modal handle closing
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && searchResults.length > 0) {
+      setShowSearchResults(true);
+    }
+    if (e.key === 'Escape') {
+      setShowSearchResults(false);
+      setSearchQuery('');
+    }
   };
 
   // Fetch patient details with React Query (includes history/appointments)
@@ -1005,6 +1075,99 @@ export const PatientDetail = () => {
     <div className="patient-detail">
       <Header showBackButton onBack={handleBack} />
 
+      {/* Search Bar */}
+      <div className="patient-search-container">
+        <div className="search-bar">
+          <Search size={20} className="search-icon" />
+          <input
+            type="text"
+            placeholder={t('dashboard.searchPlaceholder')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={handleSearchFocus}
+            onBlur={handleSearchBlur}
+            onKeyDown={handleSearchKeyDown}
+          />
+          {searchQuery && (
+            <button
+              className="search-clear-btn"
+              onClick={() => {
+                setSearchQuery('');
+                setSearchResults([]);
+                setShowSearchResults(false);
+              }}
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Search Results Container */}
+      {showSearchResults && searchResults.length > 0 && (
+        <div className="search-results-container">
+          <div className="search-results-header">
+            <span className="search-results-title">
+              {t('dashboard.searchResults')} ({searchResults.length})
+            </span>
+            <button 
+              className="search-results-close-btn" 
+              onClick={() => {
+                setShowSearchResults(false);
+                setSearchQuery('');
+              }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="search-results-list">
+            {searchResults.map((patient: any) => (
+              <div
+                key={patient.idPatient}
+                className="search-result-item"
+                onClick={() => handlePatientSelect(patient.idPatient)}
+              >
+                <div className="search-result-avatar">
+                  {patient.name?.charAt(0)}{patient.lname?.charAt(0)}
+                </div>
+                <div className="search-result-info">
+                  <div className="search-result-name">
+                    {patient.name} {patient.lname}
+                  </div>
+                  <div className="search-result-details">
+                    {patient.email && (
+                      <span className="search-result-detail">
+                        <Mail size={12} />
+                        {patient.email}
+                      </span>
+                    )}
+                    {patient.phone && (
+                      <span className="search-result-detail">
+                        <Phone size={12} />
+                        {patient.phone}
+                      </span>
+                    )}
+                    {patient.recordNumber && (
+                      <span className="search-result-detail">
+                        <User size={12} />
+                        #{patient.recordNumber}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <ChevronRight size={20} className="search-result-arrow" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {searching && !showSearchResults && (
+        <div className="search-loading">
+          {t('dashboard.searching')}...
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="detail-main">
         {/* Patient Info Card */}
@@ -1138,8 +1301,8 @@ export const PatientDetail = () => {
                 <span className="info-label">{t('medic.patientDetail.patientId')}</span>
                 <span className="info-value">
                   <User size={18} />
-                  {/* We use the idUser instead of the idPatient because the idPatient is not unique */}
-                  #{patient.idUser}
+                  {/* Display recordNumber if available, otherwise fallback to idUser */}
+                  {(patient as any).recordNumber ? `#${(patient as any).recordNumber}` : `#${patient.idUser}`}
                 </span>
               </div>
             </div>

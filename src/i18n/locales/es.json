@@ -44,6 +44,9 @@
     "welcome": "Bienvenido, {{name}}!",
     "logout": "Cerrar Sesión",
     "loading": "Cargando tus registros médicos...",
+    "searchPlaceholder": "Buscar un paciente por nombre, correo, teléfono o número de expediente...",
+    "searching": "Buscando",
+    "searchResults": "Resultados de Búsqueda",
     "patient": {
       "myInformation": "Mi Información",
       "myAppointments": "Mis Citas",
@@ -132,7 +135,7 @@
       "title": "Mis Pacientes",
       "subtitle": "Gestiona y visualiza tu {{count}} paciente",
       "subtitle_other": "Gestiona y visualiza tus {{count}} pacientes",
-      "searchPlaceholder": "Buscar por nombre, correo o teléfono...",
+      "searchPlaceholder": "Buscar por nombre, correo, teléfono o número de expediente...",
       "noPatients": "No se encontraron pacientes",
       "adjustSearch": "Intenta ajustar tus términos de búsqueda",
       "emptyState": "Tus pacientes aparecerán aquí",

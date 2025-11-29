@@ -44,6 +44,9 @@
     "welcome": "Welcome, {{name}}!",
     "logout": "Logout",
     "loading": "Loading your medical records...",
+    "searchPlaceholder": "Search for a patient by name, email, phone, or record number...",
+    "searching": "Searching",
+    "searchResults": "Search Results",
     "patient": {
       "myInformation": "My Information",
       "myAppointments": "My Appointments",
@@ -132,7 +135,7 @@
       "title": "My Patients",
       "subtitle": "Manage and view your {{count}} patient",
       "subtitle_other": "Manage and view your {{count}} patients",
-      "searchPlaceholder": "Search by name, email, or phone...",
+      "searchPlaceholder": "Search by name, email, phone, or record number...",
       "noPatients": "No patients found",
       "adjustSearch": "Try adjusting your search terms",
       "emptyState": "Your patients will appear here",

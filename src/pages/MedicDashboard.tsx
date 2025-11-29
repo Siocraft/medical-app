@@ -43,6 +43,7 @@ interface Patient {
   bloodRh: string;
   appointmentCount: string;
   lastAppointment: string;
+  recordNumber?: string;
 }
 
 const fetchPatients = async () => {
@@ -337,7 +338,8 @@ export const MedicDashboard = () => {
       patient.name?.toLowerCase().includes(searchLower) ||
       patient.lname?.toLowerCase().includes(searchLower) ||
       patient.email?.toLowerCase().includes(searchLower) ||
-      patient.phone?.includes(searchTerm)
+      patient.phone?.includes(searchTerm) ||
+      patient.recordNumber?.includes(searchTerm)
     );
   });
 

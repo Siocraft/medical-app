@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { patientService } from '../services/patientService';
 import { Header } from '../components/Header';
 import { DoctorSection } from '../components/DoctorSection';
-import type { PatientData, Allergy, Vital, Lab, Vaccine, PathologicalRecord, Contact, PatientFile, ClinicalHistory, ApiError } from '../types';
+import api from '../services/api';
+import type { PatientData, Allergy, Vital, Lab, Vaccine, PathologicalRecord, Contact, PatientFile, ClinicalHistory, ApiError, Patient } from '../types';
 import {
   Mail,
   Phone,
@@ -24,19 +26,78 @@ import {
   File,
   AlertTriangle,
   Weight,
-  Ruler
+  Ruler,
+  Search,
+  X
 } from 'lucide-react';
 import './Dashboard.css';
 import './PatientDetail.css';
 
 export const Dashboard: React.FC = () => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [patientData, setPatientData] = useState<PatientData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Patient[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   useEffect(() => {
     loadPatientData();
   }, []);
+
+  const searchPatients = useCallback(async () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    try {
+      setSearching(true);
+      const response = await api.get(`/medics/search-patients?q=${encodeURIComponent(searchQuery)}`);
+      const results = Array.isArray(response.data) ? response.data as Patient[] : [];
+      setSearchResults(results);
+      setShowSearchResults(results.length > 0);
+    } catch (error) {
+      console.error('Error searching patients:', error);
+      setSearchResults([]);
+      setShowSearchResults(false);
+    } finally {
+      setSearching(false);
+    }
+  }, [searchQuery]);
+
+  // Debounced search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim()) {
+        searchPatients();
+      } else {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchPatients]);
+
+  const handlePatientSelect = (patientId: number) => {
+    // Navigate to patient detail page (medic view)
+    navigate(`/medic/patients/${patientId}`);
+  };
+
+  const handleSearchFocus = () => {
+    if (searchResults.length > 0) {
+      setShowSearchResults(true);
+    }
+  };
+
+  const handleSearchBlur = () => {
+    // Delay hiding to allow click on results
+    setTimeout(() => setShowSearchResults(false), 200);
+  };
 
   const loadPatientData = async () => {
     try {
@@ -89,6 +150,81 @@ export const Dashboard: React.FC = () => {
       <Header />
 
       <div className="patient-dashboard-container">
+        {/* Search Bar */}
+        <div className="patient-search-container">
+          <div className="search-bar">
+            <Search size={20} className="search-icon" />
+            <input
+              type="text"
+              placeholder={t('dashboard.searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={handleSearchFocus}
+              onBlur={handleSearchBlur}
+            />
+            {searchQuery && (
+              <button
+                className="search-clear-btn"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSearchResults([]);
+                  setShowSearchResults(false);
+                }}
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          
+          {/* Search Results Dropdown */}
+          {showSearchResults && searchResults.length > 0 && (
+            <div className="search-results-dropdown">
+              {searchResults.map((patient: Patient) => (
+                <div
+                  key={patient.idPatient}
+                  className="search-result-item"
+                  onClick={() => handlePatientSelect(patient.idPatient)}
+                >
+                  <div className="search-result-avatar">
+                    {patient.name?.charAt(0)}{patient.lname?.charAt(0)}
+                  </div>
+                  <div className="search-result-info">
+                    <div className="search-result-name">
+                      {patient.name} {patient.lname}
+                    </div>
+                    <div className="search-result-details">
+                      {patient.email && (
+                        <span className="search-result-detail">
+                          <Mail size={12} />
+                          {patient.email}
+                        </span>
+                      )}
+                      {patient.phone && (
+                        <span className="search-result-detail">
+                          <Phone size={12} />
+                          {patient.phone}
+                        </span>
+                      )}
+                      {(patient as any).recordNumber && (
+                        <span className="search-result-detail">
+                          <User size={12} />
+                          #{(patient as any).recordNumber}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {searching && (
+            <div className="search-loading">
+              {t('dashboard.searching')}...
+            </div>
+          )}
+        </div>
+
         {/* Patient Header */}
         <div className="patient-dashboard-header">
           <div className="patient-dashboard-header-content">
