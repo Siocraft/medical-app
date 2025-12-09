@@ -375,3 +375,16 @@ export interface ApiError {
   message?: string;
   code?: string;
 }
+
+// Search Patient Response (matches backend SearchPatientResponseDto)
+export interface SearchPatientResponse {
+  idPatient: number;
+  idUser: number;
+  recordNumber?: string;
+  name: string;
+  lname: string;
+  email: string;
+  phone?: string;
+  bloodGroup?: string;
+  bloodRh?: string;
+}
